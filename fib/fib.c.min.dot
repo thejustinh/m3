@@ -1,0 +1,62 @@
+digraph "fib" {
+overlap=false;
+subgraph "cluster_main" {
+	label="main ()";
+	bb_0 [shape=Mdiamond,label="ENTRY"];
+
+	bb_2 [shape=record,label="
+{3: NOTE_INSN_BASIC_BLOCK\ 2\l\
+|2: NOTE_INSN_FUNCTION_BEG\l\
+|5: def r112 use 0\l\
+|6: def mem[r105-16] use r112\l\
+|7: def r113 use 0x1\l\
+|8: def mem[r105-12] use r113\l\
+|9: def r114 use 0\l\
+|10: def mem[r105-8] use r114\l\
+|11: def r115 use 0\l\
+|12: def mem[r105-4] use r115\l\
+|13: def pc use L27\l\
+}"];
+
+	bb_5 [shape=record,label="
+{27: L27:\l\
+|28: NOTE_INSN_BASIC_BLOCK\ 5\l\
+|30: def r123 use mem[r105-4]\l\
+|31: use r123 use 9)\l\
+|32: def pc use L29\}\l\
+}"];
+
+	bb_6 [shape=record,label="
+{33: NOTE_INSN_BASIC_BLOCK\ 6\l\
+|34: def r110 use mem[r105-8]\l\
+|37: def r111 use r110\l\
+|41: def r0 use r111\l\
+|42: use r0\l\
+}"];
+
+	bb_4 [shape=record,label="
+{29: L29:\l\
+|15: NOTE_INSN_BASIC_BLOCK\ 4\l\
+|16: def r117 use mem[r105-16]\l\
+|17: def r118 use mem[r105-12]\l\
+|18: def r116 use r117 use r118\l\
+|19: def [r105-8] use r116\l\
+|20: def r119 use mem[r105-12]\l\
+|21: def mem[r105-16] use r119\l\
+|22: def r120 use mem[r105-8]\l\
+|23: def mem[r105-12] use r120\l\
+|24: def r122 use mem[r105-4]\l\
+|25: def r121 use r122 use 1\l\
+|26: def mem[r105-4] use r121\l\
+}"];
+
+	bb_1 [shape=Mdiamond,label="EXIT"];
+
+	bb_0 -> bb_2 [constraint=true];
+	bb_2 -> bb_5 [constraint=true];
+    bb_4:s -> bb_5:n [constraint=false];
+	bb_5 -> bb_4 [constraint=true];
+	bb_5 -> bb_6 [constraint=true];
+	bb_6 -> bb_1 [constraint=true];
+}
+}
