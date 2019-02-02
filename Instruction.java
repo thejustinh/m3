@@ -37,19 +37,8 @@ public class Instruction {
    public String getPrevID() { return Integer.toString(prev_id); }
    public Instruction getOperation() {
       Instruction insn = (Instruction) this.attributes.get(OPR_LOC);
-      InstructionType type = insn.getType();
       return insn;
    }
-   public Instruction getSource() {
-      if (this.insn_type != InstructionType.SET || 
-          this.insn_type != InstructionType.PLUS ||
-          this.insn_type != InstructionType.REG) {
-         System.out.println("ERROR: CANNOT GET SOURCE IN CURRENT OBJECT!");
-         System.exit(0);
-      } 
-
-      return (Instruction) attributes.get(SRC_LOC);
-   } 
 
 /****************************
  * INSTRUCTION LOGIC METHODS
@@ -118,7 +107,6 @@ public class Instruction {
 
    }
 
-
    public void setTypes() {
       String type = (String)attributes.get(0);
 
@@ -142,7 +130,10 @@ public class Instruction {
             insn_type = InstructionType.SET;
             break;
          case "reg:SI":
-            insn_type = InstructionType.REG;
+            insn_type = InstructionType.REG_SI;
+            break;
+         case "reg/:SI":
+            insn_type = InstructionType.REG_F_SI;
             break;
          case "plus:SI":
             insn_type = InstructionType.PLUS;
@@ -223,7 +214,7 @@ public class Instruction {
    }
 
    public void findRegisters(HashMap<String, String> reg_map, int counter) {
-      if (insn_type == InstructionType.REG) {
+      if (insn_type == InstructionType.REG_SI) {
          String reg_num = (String)attributes.get(SRC_LOC);
          
          reg_map.putIfAbsent(reg_num, "fp #-" + Integer.toString(counter * 4));
