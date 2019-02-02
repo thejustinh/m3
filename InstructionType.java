@@ -5,7 +5,10 @@ public enum InstructionType {
     CODE_LABEL, 
     JUMP_INSN, 
     SET,
-    REG,
+    REG_SI,
+    REG_F_SI,
+    MEM,
     PLUS,
+    CONST_INT,
     DEFAULT
 }

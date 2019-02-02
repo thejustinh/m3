@@ -4,9 +4,7 @@ import java.util.ArrayList;
 
 public class Instruction {
 
-   private static final int OPR_LOC = 5;
-   private static final int SRC_LOC = 1;
-   private static final int DST_LOC = 2;
+   private static final int ARM_LOC = 5;
 
    private String insn;
    private ArrayList<Object> attributes;
@@ -16,17 +14,17 @@ public class Instruction {
    private int prev_id;
    private int next_id;
 
-/****************************
- * CONSTRUCTOR
- ***************************/
+  /****************************
+   * CONSTRUCTOR
+   ***************************/
    public Instruction(String insn) {
       this.insn = insn;
       attributes = new ArrayList<Object>();
    }
 
-/****************************
- * ACESSOR METHODS
- ***************************/
+  /****************************
+   * ACESSOR METHODS
+   ***************************/
    public String getInsn() { return insn; }
    public ArrayList<Object> getAttributes() { return attributes; }
    public InstructionType getType() { return insn_type; }
@@ -34,25 +32,14 @@ public class Instruction {
    public String getCurrID() { return Integer.toString(curr_id); }
    public String getNextID() { return Integer.toString(next_id); }
    public String getPrevID() { return Integer.toString(prev_id); }
-   public Instruction getOperation() {
-      Instruction insn = (Instruction) this.attributes.get(OPR_LOC);
-      InstructionType type = insn.getType();
+   public Instruction getARMInsn() {
+      Instruction insn = (Instruction) this.attributes.get(ARM_LOC);
       return insn;
    }
-   public Instruction getSource() {
-      if (this.insn_type != InstructionType.SET || 
-          this.insn_type != InstructionType.PLUS ||
-          this.insn_type != InstructionType.REG) {
-         System.out.println("ERROR: CANNOT GET SOURCE IN CURRENT OBJECT!");
-         System.exit(0);
-      } 
 
-      return (Instruction) attributes.get(SRC_LOC);
-   } 
-
-/****************************
- * INSTRUCTION LOGIC METHODS
- ***************************/
+  /****************************
+   * INSTRUCTION LOGIC METHODS
+   ***************************/
    public void parseSExpressions() {
       StringBuilder word = new StringBuilder();
       for(int i = 1; i < insn.length(); i++) {
@@ -140,16 +127,24 @@ public class Instruction {
          case "set":
             insn_type = InstructionType.SET;
             break;
+         case "const_int":
+            insn_type = InstructionType.CONST_INT;
+            break;
          case "reg:SI":
-            insn_type = InstructionType.REG;
+            insn_type = InstructionType.REG_SI;
+            break;
+         case "reg/f:SI":
+            insn_type = InstructionType.REG_F_SI;
+            break;
+         case "mem/c:SI":
+            insn_type = InstructionType.MEM;
             break;
          case "plus:SI":
             insn_type = InstructionType.PLUS;
             break;
          default: 
             insn_type = InstructionType.DEFAULT;
-      }
-      
+      }   
 
       for (int i = 1; i < attributes.size(); i++) {
          if(attributes.get(i) instanceof Instruction) {
