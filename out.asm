@@ -1,2 +1,3 @@
-Hello,
-world!
+.arch armv6
+.text
+.global main

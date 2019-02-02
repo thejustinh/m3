@@ -54,7 +54,16 @@ public class GenerateAssembly {
             /* Method to populate graph from RTL file */        
             generateGraph(fis);
 
-            /* Loop through graph to convert each RTL insn to ARM insn */
+            /* Write initialize lines to ASM file*/
+            writer.write("\t.arch armv7-a\n\t.text\n\t.global main\n");
+
+            writer.write("main:\n"); // TODO: Function name hardcoded
+            writer.write("\tpush {fp, lr}\n");
+            writer.write("\tmov fp, sp\n");
+            writer.write("\tsub sp, sp #Calculated Later\n");
+
+            /* Loop through graph to convert each RTL insn to ARM insn and 
+               write to ASM file. */
             for (int i = BB_START; i < graph.size(); i++) {     
                 for (Instruction insn : graph.get(i)) {
                     String out = armify(insn);
@@ -62,7 +71,6 @@ public class GenerateAssembly {
                 }
             }
 
-            writer.write("Hello,\nworld!");
             writer.flush();
             writer.close();
         } catch (Exception e) {
@@ -105,6 +113,12 @@ public class GenerateAssembly {
         return out.toString();
     }
 
+   /**
+    * Method to read in an RTL file, parse each instruction, and populate a
+    * graph of RTL instructions.
+    * 
+    * @param FileInputStream
+    */
     private static void generateGraph(FileInputStream fis) {
         StringBuilder object = new StringBuilder();
         Stack<Character> stack = new Stack<Character>();
