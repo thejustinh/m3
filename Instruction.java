@@ -1,10 +1,13 @@
 import java.util.Stack;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Instruction {
 
-   private static final int ARM_LOC = 5;
+   private static final int OPR_LOC = 5;
+   private static final int SRC_LOC = 1;
+   private static final int DST_LOC = 2;
 
    private String insn;
    private ArrayList<Object> attributes;
@@ -14,17 +17,17 @@ public class Instruction {
    private int prev_id;
    private int next_id;
 
-  /****************************
-   * CONSTRUCTOR
-   ***************************/
+/****************************
+ * CONSTRUCTOR
+ ***************************/
    public Instruction(String insn) {
       this.insn = insn;
       attributes = new ArrayList<Object>();
    }
 
-  /****************************
-   * ACESSOR METHODS
-   ***************************/
+/****************************
+ * ACESSOR METHODS
+ ***************************/
    public String getInsn() { return insn; }
    public ArrayList<Object> getAttributes() { return attributes; }
    public InstructionType getType() { return insn_type; }
@@ -32,14 +35,25 @@ public class Instruction {
    public String getCurrID() { return Integer.toString(curr_id); }
    public String getNextID() { return Integer.toString(next_id); }
    public String getPrevID() { return Integer.toString(prev_id); }
-   public Instruction getARMInsn() {
-      Instruction insn = (Instruction) this.attributes.get(ARM_LOC);
+   public Instruction getOperation() {
+      Instruction insn = (Instruction) this.attributes.get(OPR_LOC);
+      InstructionType type = insn.getType();
       return insn;
    }
+   public Instruction getSource() {
+      if (this.insn_type != InstructionType.SET || 
+          this.insn_type != InstructionType.PLUS ||
+          this.insn_type != InstructionType.REG) {
+         System.out.println("ERROR: CANNOT GET SOURCE IN CURRENT OBJECT!");
+         System.exit(0);
+      } 
 
-  /****************************
-   * INSTRUCTION LOGIC METHODS
-   ***************************/
+      return (Instruction) attributes.get(SRC_LOC);
+   } 
+
+/****************************
+ * INSTRUCTION LOGIC METHODS
+ ***************************/
    public void parseSExpressions() {
       StringBuilder word = new StringBuilder();
       for(int i = 1; i < insn.length(); i++) {
@@ -127,24 +141,16 @@ public class Instruction {
          case "set":
             insn_type = InstructionType.SET;
             break;
-         case "const_int":
-            insn_type = InstructionType.CONST_INT;
-            break;
          case "reg:SI":
-            insn_type = InstructionType.REG_SI;
-            break;
-         case "reg/f:SI":
-            insn_type = InstructionType.REG_F_SI;
-            break;
-         case "mem/c:SI":
-            insn_type = InstructionType.MEM;
+            insn_type = InstructionType.REG;
             break;
          case "plus:SI":
             insn_type = InstructionType.PLUS;
             break;
          default: 
             insn_type = InstructionType.DEFAULT;
-      }   
+      }
+      
 
       for (int i = 1; i < attributes.size(); i++) {
          if(attributes.get(i) instanceof Instruction) {
@@ -216,19 +222,43 @@ public class Instruction {
       }
    }
 
+   public void findRegisters(HashMap<String, String> reg_map, int counter) {
+      if (insn_type == InstructionType.REG) {
+         String reg_num = (String)attributes.get(SRC_LOC);
+         
+         reg_map.putIfAbsent(reg_num, "fp #-" + Integer.toString(counter * 4));
+         
+         System.out.println("REG_NUM: " + reg_num + "Location: " + reg_map.get(reg_num));
+         
+         return;
+      }  
+
+      for(int i = 0; i < attributes.size(); i++) {
+         Object temp = attributes.get(i);
+         if(temp instanceof Instruction) {
+            Instruction instr = (Instruction)temp;
+            instr.findRegisters(reg_map, counter);
+         }
+      }
+   }
+
    public static void main(String[] args) {
+      HashMap<String, String> reg_map = new HashMap<>(); 
+      int virtual_reg_count = 0;
+
       String test = "(insn 18 17 19 4 (set (reg:SI 116) (plus:SI (reg:SI 117) (reg:SI 118))) \"fib.c\":8 -1 (nil))";
-      String test_2 = "(a b c (d e f))";
-      System.out.println(test);
+      //String test_2 = "(a b c (d e f))";
+      //System.out.println(test);
       Instruction in = new Instruction(test);
       in.parseSExpressions();
       in.setTypes();
       in.setBasicBlock();
-      in.print_type_and_bb();
-      System.out.print("{");
-      in.printAll();
-      System.out.print("}");
-      System.out.println();
+      in.findRegisters(reg_map, virtual_reg_count);
+      //in.print_type_and_bb();
+      //System.out.print("{");
+      //in.printAll();
+      //System.out.print("}");
+      //System.out.println();
    }
    
 
