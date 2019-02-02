@@ -97,6 +97,7 @@ public class GenerateAssembly {
                 out.append(" INSN\n");
                 Instruction s_exp = insn.getSExp();
                 ARMInstruction arm = new ARMInstruction(s_exp);
+                System.out.println(arm.toString());
                 out.append("\tDST: "+arm.getArmDestination() + "\n"); 
                 out.append("\tSRC: " + arm.getArmSource() + "\n"); 
                 break;

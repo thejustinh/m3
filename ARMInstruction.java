@@ -37,7 +37,8 @@ public class ARMInstruction {
    public ARMInstruction (Instruction insn) {
       this.insn = insn.getInsn();
       this.insn_type = insn.getType();
-      this.insn_destination = (Instruction) (insn.getAttributes()).get(DST_LOC);
+
+      this.insn_destination=(Instruction)(insn.getAttributes()).get(DST_LOC);
       this.arm_destination = rtl2arm (this.insn_destination);
 
       /* This case checks to see the S Exp is of type SET. Otherwise, it could
@@ -73,11 +74,14 @@ public class ARMInstruction {
       Instruction src;
 
       switch (type) {
+         case NOTE:
+            out.append(" NOTE");
+            break;
          case SET: // NON-TERMINAL
             dst_res = rtl2arm(this.insn_destination);
             src_res = rtl2arm(this.insn_source);
             
-            out.append("LDR or STR " + dst_res + src_res);
+            out.append("LDR or STR " + dst_res + ", " +  src_res);
             break;
          case REG_SI:
             out.append(getRegister(insn, false));
@@ -106,7 +110,7 @@ public class ARMInstruction {
             dst_res = rtl2arm(dst); 
             src_res = rtl2arm(src);
 
-            out.append("COMPARE " + dst_res + src_res);
+            out.append("COMPARE " + dst_res + ", " + src_res);
             break;
          case PLUS: // NON-TERMINAL
             dst = (Instruction) insn.getAttributes().get(DST_LOC); 
