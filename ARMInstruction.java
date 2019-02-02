@@ -9,6 +9,7 @@ public class ARMInstruction {
 
    private static final int DST_LOC = 1;
    private static final int SRC_LOC = 2;
+   private static final int ARG_LOC = 1;
 
    /* RTL attributes for ARM Instruction */
    private String insn;
@@ -20,11 +21,15 @@ public class ARMInstruction {
    private String arm_destination;
    private String arm_source;
 
+   /* Finalized converted ARM string */
+   private String arm_string;
+
   /*************************
    * ACCESSOR METHODS
    ************************/ 
    public String getArmDestination() { return this.arm_destination; }
    public String getArmSource() { return this.arm_source; }
+   public String toString() { return this.arm_string; }
 
   /*************************
    * CONSTRUCTOR
@@ -41,6 +46,8 @@ public class ARMInstruction {
          this.insn_source = (Instruction) insn.getAttributes().get(SRC_LOC);
          this.arm_source = rtl2arm (this.insn_source);
       }
+
+      this.arm_string = rtl2arm (insn);
    }
 
   /*************************
@@ -50,8 +57,8 @@ public class ARMInstruction {
     * This is a driver method to convert and evaluate an RTL expression to
     * an appropriate ARM instruction
     * 
-    * This assumes that the instruction passed in is only a destination or
-    * source argument
+    * This assumes that the instruction passed in is only a destination,
+    * source, or the parent of dst/src
     *
     * @param Instruction insn
     * @param Hashmap RegisterTable
@@ -59,25 +66,64 @@ public class ARMInstruction {
     */
    private String rtl2arm (Instruction insn) {
       InstructionType type = insn.getType();
+      StringBuilder out = new StringBuilder();
+      String dst_res;
+      String src_res;
+      Instruction dst;
+      Instruction src;
+
       switch (type) {
+         case SET: // NON-TERMINAL
+            dst_res = rtl2arm(this.insn_destination);
+            src_res = rtl2arm(this.insn_source);
+            
+            out.append("LDR or STR " + dst_res + src_res);
+            break;
          case REG_SI:
-            return "rtl2arm: REG_SI";
+            out.append(getRegister(insn, false));
+            break;
          case REG_F_SI:
-            return "rtl2arm: REG_F_SI";
+            out.append(getRegister(insn, true));
+            break;
          case REG_I_SI:
-            return "rtl2arm: REG_I_SI";
+            out.append(getRegister(insn, false));
+            break;
          case REG_CC:
-            return "rtl2arm: REG_CC";
-         case MEM_C_SI:
-            return "rtl2arm: MEM_C_SI";
-         case CONST_INT:
-            return "rtl2arm: CONST_INT";
+            out.append(getRegister(insn, false));
+            break;
+         case MEM_C_SI: // NON-TERMINAL
+            dst = (Instruction) insn.getAttributes().get(DST_LOC); 
+            dst_res = rtl2arm(dst); 
+
+            out.append(dst_res);
+            break;
+         case CONST_INT: // TERMINAL
+            out.append("#" + (String) insn.getAttributes().get(ARG_LOC));
+            break;
          case COMPARE_CC:
-            return "rtl2arm: COMPARE_CC";
-         case PLUS:
-            return "rtl2arm: PLUS";
+            dst = (Instruction) insn.getAttributes().get(DST_LOC); 
+            src = (Instruction) insn.getAttributes().get(SRC_LOC); 
+            dst_res = rtl2arm(dst); 
+            src_res = rtl2arm(src);
+
+            out.append("COMPARE " + dst_res + src_res);
+            break;
+         case PLUS: // NON-TERMINAL
+            dst = (Instruction) insn.getAttributes().get(DST_LOC); 
+            src = (Instruction) insn.getAttributes().get(SRC_LOC); 
+            dst_res = rtl2arm(dst); 
+            src_res = rtl2arm(src);
+
+            out.append("[" + dst_res + ", " + src_res + "]");
+            break;
          default:
             return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED";
       }
+
+      return out.toString();
+   }
+
+   private String getRegister (Instruction insn, boolean vsv) {
+      return (String) insn.getAttributes().get(ARG_LOC);
    }
 }
