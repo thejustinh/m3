@@ -35,7 +35,7 @@ public class Instruction {
    public String getCurrID() { return Integer.toString(curr_id); }
    public String getNextID() { return Integer.toString(next_id); }
    public String getPrevID() { return Integer.toString(prev_id); }
-   public Instruction getOperation() {
+   public Instruction getSExp() {
       Instruction insn = (Instruction) this.attributes.get(OPR_LOC);
       return insn;
    }
@@ -132,11 +132,26 @@ public class Instruction {
          case "reg:SI":
             insn_type = InstructionType.REG_SI;
             break;
-         case "reg/:SI":
+         case "reg/f:SI":
             insn_type = InstructionType.REG_F_SI;
+            break;
+         case "reg/i:SI":
+            insn_type = InstructionType.REG_I_SI;
+            break;
+         case "reg:CC":
+            insn_type = InstructionType.REG_CC;
+            break;
+         case "compare:CC":
+            insn_type = InstructionType.COMPARE_CC;
+            break;
+         case "mem/c:SI":
+            insn_type = InstructionType.MEM_C_SI;
             break;
          case "plus:SI":
             insn_type = InstructionType.PLUS;
+            break;
+         case "const_int":
+            insn_type = InstructionType.CONST_INT;
             break;
          default: 
             insn_type = InstructionType.DEFAULT;

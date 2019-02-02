@@ -89,26 +89,49 @@ public class GenerateAssembly {
         /*
         * 2nd pass
         *   For each instruction, we generate the corresponding assembly insn
-        *
-        *
         */
         for (int i = BB_START; i < graph.size(); i++) {     
             for (Instruction insn : graph.get(i)) {
-                InstructionType type = insn.getType();
-                switch (type) {
-                    case NOTE:
-                        System.out.println("Note switch");
-                        break;
-                    case INSN:
-                        System.out.println("INSN switch");
-                        break;
-                    default:
-                        System.out.println("not supported instruction");
-                        break; 
-                }
+                String out = armify(insn);
+                System.out.println(out);
             }
         }
     }
+
+   /**
+    * Method to convert RTL instruction into ARM instruction
+    *
+    * @param Instruction insn 
+    * @return String insn in ARM format
+    */
+    private static String armify (Instruction insn) {
+        InstructionType type = insn.getType();
+        StringBuilder out = new StringBuilder();
+        out.append(insn.getCurrID());
+        switch (type) {
+            case NOTE:
+                out.append(" NOTE\n");
+                break;
+            case INSN:
+                out.append(" INSN\n");
+                Instruction s_exp = insn.getSExp();
+                ARMInstruction arm = new ARMInstruction(s_exp);
+                out.append("\tDST: "+arm.getArmDestination() + "\n"); 
+                out.append("\tSRC: " + arm.getArmSource() + "\n"); 
+                break;
+            case JUMP_INSN:
+                out.append(" JUMP\n");
+                break;
+            case CODE_LABEL:
+                out.append(" CODE_LABEL\n");
+                break;
+            default:
+                out.append(" GenerateAssembly: OPERATION NOT SUPPORTED\n");
+                break; 
+        }
+        return out.toString();
+    }
+
 
    /**
     * Method to verify if a string is in the form of a lisp instruction.
