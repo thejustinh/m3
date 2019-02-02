@@ -32,6 +32,7 @@ public class GenerateAssembly {
         }
 
         File file = new File(args[0]);
+        File file2 = new File(args[1]);
 
         // Check to see if file exists
         if (!file.exists()) {
@@ -45,57 +46,29 @@ public class GenerateAssembly {
             return;
         }
 
-        /*
-        * 1st pass
-        *   Find the largest register size
-        *   Find the smallest register size
-        *   Populate and generate a set of known registers
-        */
-
         try {
             FileInputStream fis = new FileInputStream(file);
-            StringBuilder object = new StringBuilder();
-            Stack<Character> stack = new Stack<Character>();
+            file.createNewFile();
+            FileWriter writer = new FileWriter(file2);
 
-            char c;
+            /* Method to populate graph from RTL file */        
+            generateGraph(fis);
 
-            while (fis.available() > 0) {
-                c = (char) fis.read();
-
-                if (c == '(') 
-                    stack.push(c); 
-                if (c == ')') 
-                    stack.pop();   
-                
-                object.append(c);
-
-                if (stack.empty() && !object.toString().equals("\n")) {
-                    String result = object.toString().trim();
-                    if (isValidInsn(result)) {
-                        Instruction obj = new Instruction(result);
-                        obj.parseSExpressions();
-                        obj.setTypes();
-                        obj.setBasicBlock();
-                        storeInstruction(obj);
-                    }
-                    object = new StringBuilder();
-                }                   
+            /* Loop through graph to convert each RTL insn to ARM insn */
+            for (int i = BB_START; i < graph.size(); i++) {     
+                for (Instruction insn : graph.get(i)) {
+                    String out = armify(insn);
+                    System.out.println(out);
+                }
             }
-        
+
+            writer.write("Hello,\nworld!");
+            writer.flush();
+            writer.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        /*
-        * 2nd pass
-        *   For each instruction, we generate the corresponding assembly insn
-        */
-        for (int i = BB_START; i < graph.size(); i++) {     
-            for (Instruction insn : graph.get(i)) {
-                String out = armify(insn);
-                System.out.println(out);
-            }
-        }
     }
 
    /**
@@ -132,6 +105,39 @@ public class GenerateAssembly {
         return out.toString();
     }
 
+    private static void generateGraph(FileInputStream fis) {
+        StringBuilder object = new StringBuilder();
+        Stack<Character> stack = new Stack<Character>();
+
+        char c;
+
+        try {
+            while (fis.available() > 0) {
+                c = (char) fis.read();
+
+                if (c == '(') 
+                    stack.push(c); 
+                if (c == ')') 
+                    stack.pop();   
+                
+                object.append(c);
+
+                if (stack.empty() && !object.toString().equals("\n")) {
+                    String result = object.toString().trim();
+                    if (isValidInsn(result)) {
+                        Instruction obj = new Instruction(result);
+                        obj.parseSExpressions();
+                        obj.setTypes();
+                        obj.setBasicBlock();
+                        storeInstruction(obj);
+                    }
+                    object = new StringBuilder();
+                }                   
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
    /**
     * Method to verify if a string is in the form of a lisp instruction.
