@@ -5,6 +5,9 @@
  * @author Justin Herrera
  * @author James Kwan
  **/
+
+import java.util.HashMap;
+
 public class ARMInstruction {
 
    private static final int DST_LOC = 1;
@@ -24,6 +27,9 @@ public class ARMInstruction {
    /* Finalized converted ARM string */
    private String arm_string;
 
+   /* Register map and counts */
+   private HashMap<String, String> reg_map;
+   private Counter reg_count;
   /*************************
    * ACCESSOR METHODS
    ************************/ 
@@ -34,9 +40,12 @@ public class ARMInstruction {
   /*************************
    * CONSTRUCTOR
    ************************/ 
-   public ARMInstruction (Instruction insn) {
+   public ARMInstruction (Instruction insn, HashMap<String, String> reg_map, Counter reg_count) {
       this.insn = insn.getInsn();
       this.insn_type = insn.getType();
+
+      this.reg_map = reg_map;
+      this.reg_count = reg_count;
 
       this.insn_destination=(Instruction)(insn.getAttributes()).get(DST_LOC);
       this.arm_destination = rtl2arm (this.insn_destination);
@@ -80,7 +89,7 @@ public class ARMInstruction {
          case SET: // NON-TERMINAL
             dst_res = rtl2arm(this.insn_destination);
             src_res = rtl2arm(this.insn_source);
-            
+        
             out.append("LDR or STR " + dst_res + ", " +  src_res);
             break;
          case REG_SI:

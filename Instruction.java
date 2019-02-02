@@ -228,13 +228,17 @@ public class Instruction {
       }
    }
 
-   public void findRegisters(HashMap<String, String> reg_map, int counter) {
+   public void findRegisters(HashMap<String, String> reg_map, Counter counter) {
       if (insn_type == InstructionType.REG_SI) {
          String reg_num = (String)attributes.get(SRC_LOC);
          
-         reg_map.putIfAbsent(reg_num, "fp #-" + Integer.toString(counter * 4));
+         if(!reg_map.containsKey(reg_num)) {
+            reg_map.put(reg_num, "[fp, #-" + Integer.toString(counter.getCount() * 4) + "]");
+            counter.increment();
+         }
          
-         System.out.println("REG_NUM: " + reg_num + "Location: " + reg_map.get(reg_num));
+
+         System.out.println("REG_NUM: " + reg_num + " Location: " + reg_map.get(reg_num));
          
          return;
       }  
@@ -250,7 +254,7 @@ public class Instruction {
 
    public static void main(String[] args) {
       HashMap<String, String> reg_map = new HashMap<>(); 
-      int virtual_reg_count = 0;
+      Counter virtual_reg_count = new Counter();
 
       String test = "(insn 18 17 19 4 (set (reg:SI 116) (plus:SI (reg:SI 117) (reg:SI 118))) \"fib.c\":8 -1 (nil))";
       //String test_2 = "(a b c (d e f))";

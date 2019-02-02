@@ -21,7 +21,9 @@ public class GenerateAssembly {
     
     private static final int BB_START = 2;
     private static ArrayList<LinkedList<Instruction>> graph = new ArrayList<>();
- 
+    private static HashMap<String, String> reg_map = new HashMap<>();
+    private static Counter reg_count = new Counter();
+
     public static void main (String[] args) {
 
         // Command line check for file
@@ -96,7 +98,7 @@ public class GenerateAssembly {
             case INSN:
                 out.append(" INSN\n");
                 Instruction s_exp = insn.getSExp();
-                ARMInstruction arm = new ARMInstruction(s_exp);
+                ARMInstruction arm = new ARMInstruction(s_exp, reg_map, reg_count);
                 System.out.println(arm.toString());
                 out.append("\tDST: "+arm.getArmDestination() + "\n"); 
                 out.append("\tSRC: " + arm.getArmSource() + "\n"); 
@@ -144,6 +146,7 @@ public class GenerateAssembly {
                         obj.parseSExpressions();
                         obj.setTypes();
                         obj.setBasicBlock();
+                        obj.findRegisters(reg_map, reg_count);
                         storeInstruction(obj);
                     }
                     object = new StringBuilder();
