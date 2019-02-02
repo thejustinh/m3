@@ -2,29 +2,57 @@ import java.util.Stack;
 import java.io.FileWriter;
 import java.util.ArrayList;
 
-
 public class Instruction {
-   public enum INSN_TYPE {INSN, NOTE, BARRIER, CODE_LABEL, JUMP_INSN, DEFAULT;}
+
+   private static final int OPR_LOC = 5;
+   private static final int SRC_LOC = 1;
+   private static final int DST_LOC = 2;
 
    private String insn;
    private ArrayList<Object> attributes;
-   private INSN_TYPE insn_type;
+   private InstructionType insn_type;
    private int basic_block_num;
    private int curr_id;
    private int prev_id;
    private int next_id;
 
+/****************************
+ * CONSTRUCTOR
+ ***************************/
    public Instruction(String insn) {
       this.insn = insn;
       attributes = new ArrayList<Object>();
    }
 
+/****************************
+ * ACESSOR METHODS
+ ***************************/
    public String getInsn() { return insn; }
-
    public ArrayList<Object> getAttributes() { return attributes; }
-
+   public InstructionType getType() { return insn_type; }
    public int getBasicBlock () { return basic_block_num; }
+   public String getCurrID() { return Integer.toString(curr_id); }
+   public String getNextID() { return Integer.toString(next_id); }
+   public String getPrevID() { return Integer.toString(prev_id); }
+   public Instruction getOperation() {
+      Instruction insn = (Instruction) this.attributes.get(OPR_LOC);
+      InstructionType type = insn.getType();
+      return insn;
+   }
+   public Instruction getSource() {
+      if (this.insn_type != InstructionType.SET || 
+          this.insn_type != InstructionType.PLUS ||
+          this.insn_type != InstructionType.REG) {
+         System.out.println("ERROR: CANNOT GET SOURCE IN CURRENT OBJECT!");
+         System.exit(0);
+      } 
 
+      return (Instruction) attributes.get(SRC_LOC);
+   } 
+
+/****************************
+ * INSTRUCTION LOGIC METHODS
+ ***************************/
    public void parseSExpressions() {
       StringBuilder word = new StringBuilder();
       for(int i = 1; i < insn.length(); i++) {
@@ -89,31 +117,37 @@ public class Instruction {
 
    }
 
-   public INSN_TYPE getTypes() {
-      return insn_type;
-   }
 
    public void setTypes() {
       String type = (String)attributes.get(0);
 
       switch (type) {
          case "insn":
-            insn_type = INSN_TYPE.INSN;
+            insn_type = InstructionType.INSN;
             break;
          case "note": 
-            insn_type = INSN_TYPE.NOTE;
+            insn_type = InstructionType.NOTE;
             break;
          case "barrier": 
-            insn_type = INSN_TYPE.BARRIER;
+            insn_type = InstructionType.BARRIER;
             break;
          case "code_label": 
-            insn_type = INSN_TYPE.CODE_LABEL;
+            insn_type = InstructionType.CODE_LABEL;
             break;
          case "jump_insn": 
-            insn_type = INSN_TYPE.JUMP_INSN;
+            insn_type = InstructionType.JUMP_INSN;
+            break;
+         case "set":
+            insn_type = InstructionType.SET;
+            break;
+         case "reg:SI":
+            insn_type = InstructionType.REG;
+            break;
+         case "plus:SI":
+            insn_type = InstructionType.PLUS;
             break;
          default: 
-            insn_type = INSN_TYPE.DEFAULT;
+            insn_type = InstructionType.DEFAULT;
       }
       
 
@@ -163,9 +197,6 @@ public class Instruction {
       }
    }
 
-   public String getCurrID() { return Integer.toString(curr_id); }
-   public String getNextID() { return Integer.toString(next_id); }
-   public String getPrevID() { return Integer.toString(prev_id); }
 
    public void writeInsnIntoDot(FileWriter writer) {
       try {for (int i = 0; i < attributes.size(); i++) {
