@@ -10,6 +10,17 @@ import java.util.HashMap;
 
 public class ARMInstruction {
 
+   private enum SET_SIGNATURE {
+      SET_MEM_REG,
+      SET_REG_MEM,
+      SET_REG_CONST,
+      SET_REG_PLUS,
+      PLUS_REG_REG,
+      PLUS_REG_CONST,
+      PLUS_REG_F_CONST,
+      UNKOWN
+   } 
+
    private static final int DST_LOC = 1;
    private static final int SRC_LOC = 2;
    private static final int ARG_LOC = 1;
@@ -77,10 +88,8 @@ public class ARMInstruction {
    private String rtl2arm (Instruction insn) {
       InstructionType type = insn.getType();
       StringBuilder out = new StringBuilder();
-      String dst_res;
-      String src_res;
-      Instruction dst;
-      Instruction src;
+      String dst_res, src_res, signature;
+      Instruction dst, src;
 
       switch (type) {
          case NOTE:
@@ -89,42 +98,14 @@ public class ARMInstruction {
          case SET: // NON-TERMINAL
             src_res = rtl2arm(this.insn_source);
             dst_res = rtl2arm(this.insn_destination);
-            
-            /* destination is sp -# and src is register */
-            if(dst_res.contains("[") && src_res.contains("[fp")) {
-              reg_map.put(dst_res, src_res);
-              reg_count.increment();
-              System.out.println("REG_NUM: " + dst_res + " Location: " + reg_map.get(dst_res));
-            }
-            /* set reg #c */
-            else if (dst_res.contains("[fp") && src_res.charAt(0) == '#') {
-              out.append("mov r4, " + src_res + "\n");
-              out.append("str r4, " + dst_res + "\n");
-            }
-            /* set reg mem */
-            else if(dst_res.contains("[fp") && src_res.contains("[")) {
-              out.append("ldr r4, " + reg_map.get(src_res) + "\n");
-              out.append("str r4, " + dst_res + "\n"); // maybe not right
-            }
-            else if(dst_res.contains("[fp") && src_res.contains("xx")) {
-              out.append("add " + dst_res + " " + src_res.substring(2));
-            }
-            else if(dst_res.contains("[fp") && src_res.contains("[[")) {
-              int index = src_res.indexOf("]");
-              String source = src_res.substring(1, index);
-              out.append("ldr r4, " + source + "\n");
-              out.append("add r0, r4, " + src_res.substring(index+1,src_res.length()-1) + "\n");
-              out.append("str r0, " + dst_res + "\n");
-            }
-            //out.append("LDR or STR " + dst_res + ", " +  src_res);
+            signature = evalSet(type, dst_res, src_res);
+            out.append(signature); 
             break;
          case REG_SI:
             out.append(getRegister(insn, false));
             break;
          case REG_F_SI:
-            String sp_num = (String)insn.getAttributes().get(DST_LOC);
-            out.append(sp_num);
-            //out.append(getRegister(insn, true));
+            out.append((String)insn.getAttributes().get(DST_LOC));
             break;
          case REG_I_SI:
             out.append(getRegister(insn, false));
@@ -135,11 +116,9 @@ public class ARMInstruction {
          case MEM_C_SI: // NON-TERMINAL
             dst = (Instruction) insn.getAttributes().get(DST_LOC); 
             dst_res = rtl2arm(dst); 
-
-            out.append(dst_res);
+            out.append("mem[" + dst_res + "]");
             break;
          case CONST_INT: // TERMINAL
-            //out.append("mov r4, " + src_res);
             out.append("#" + (String) insn.getAttributes().get(ARG_LOC));
             break;
          case COMPARE_CC:
@@ -147,7 +126,6 @@ public class ARMInstruction {
             src = (Instruction) insn.getAttributes().get(SRC_LOC); 
             dst_res = rtl2arm(dst); 
             src_res = rtl2arm(src);
-
             out.append("COMPARE " + dst_res + ", " + src_res);
             break;
          case PLUS: // NON-TERMINAL
@@ -155,16 +133,8 @@ public class ARMInstruction {
             src = (Instruction) insn.getAttributes().get(SRC_LOC); 
             dst_res = rtl2arm(dst); 
             src_res = rtl2arm(src);
-
-            /*check if both are registers*/
-            if(dst_res.contains("[") && src_res.contains("[")) {
-              out.append("xxr4, r5");
-            }
-            else {
-              out.append("[" + dst_res + ", " + src_res + "]");
-            }
-
-            
+            signature = evalSet(type, dst_res, src_res);
+            out.append(signature);
             break;
          default:
             return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED";
@@ -173,7 +143,160 @@ public class ARMInstruction {
       return out.toString();
    }
 
+
+  /**
+   * Method to arrange ARM syntax depending on RTL signature.
+   * 
+   * @param InstructionType type
+   * @param String destination
+   * @param String source
+   * @return String The result is a valid ARM instruction
+   */
+   private String evalSet (InstructionType type, String dst, String src) {
+      
+      StringBuilder arm_out = new StringBuilder();
+      SET_SIGNATURE signature = determineSetSignature(type, dst, src);
+ 
+      if (signature == SET_SIGNATURE.SET_MEM_REG) {
+
+         System.out.println("Added to map! key dst: " + dst + " key src: " + src);
+         reg_map.put(dst, src);
+         reg_count.increment();
+
+      } else if (signature == SET_SIGNATURE.SET_REG_CONST) { 
+
+          arm_out.append("\tmov r4, " + src + "\n"); 
+          arm_out.append("\tstr r4, " + dst + "\n");
+
+      } else if (signature == SET_SIGNATURE.SET_REG_MEM) {
+
+         /* TODO:This is tricky. Because it is a load register, we must reserve
+          * the register for the given virtual register.
+          * EX: if we load the data at mem[X] into r5. We cannot overwrite this
+          * register in later instructions.
+          */
+          
+         arm_out.append("\tldr r4, " + reg_map.get(src) + "\n");
+
+      } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
+
+         /* TODO: This case is only true when we have an ADD set. This is
+          * tricky because we have to link a virtual register to the physical
+          * register.
+          * EX: if we had data from 111 and 112 that we loaded into r3 and r4
+          * respectively, we would have to figure out in this call that it was
+          * actually loaded into r3 and r4
+          */
+         arm_out.append(dst + ", " + src); 
+
+      } else if (signature == SET_SIGNATURE.PLUS_REG_CONST) {
+
+          //arm_out.append("[" + dst + ", " + src + "]");
+         arm_out.append(dst + ", " + src);
+
+      } else if (signature == SET_SIGNATURE.PLUS_REG_F_CONST) {
+
+         //arm_out.append("[" + dst + ", " + src + "]");
+         arm_out.append(dst + ", " + src);
+
+      } else if (signature == SET_SIGNATURE.SET_REG_PLUS) {
+
+         arm_out.append("\tadd " + dst + ", " + src + "\n"); 
+    
+      } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
+
+      
+
+      } else {
+
+         System.out.println("\tTYPE: " + type + " dst: " + dst + " src: " + src);
+         arm_out.append("\tARMInstruction evalSet(): Unsupported Set Signature!");
+
+      }
+
+      return arm_out.toString();
+   }
+
+  /**
+   * Method to determine the RTL instruction signature based on the destination
+   * and source S Expressions
+   *
+   * This method uses regular expressions to match a dst or source expression
+   *
+   * @param InstructionType type
+   * @param String Destination
+   * @param String Source
+   * @return SET_SIGNATURE 
+   */
+   private SET_SIGNATURE determineSetSignature(InstructionType type, 
+            String dst, String src) {
+      
+      String regex_register = "\\[fp, #-[0-9]+\\]";
+      String regex_register_f = "[0-9]+";
+      String regex_mem = "mem\\[.*\\]";
+      String regex_const_int = "#.*";
+      String regex_plus_reg_reg = "\\[.*\\], \\[.*\\]"; 
+      String regex_plus_reg_const = "\\[.*\\], #.*";
+
+      if (type == InstructionType.SET) {
+
+         if (dst.matches(regex_register) && src.matches(regex_const_int)) {
+
+            return SET_SIGNATURE.SET_REG_CONST;
+
+         } else if (dst.matches(regex_mem) && src.matches(regex_register)) {
+
+            return SET_SIGNATURE.SET_MEM_REG;
+
+         } else if (dst.matches(regex_register) && src.matches(regex_mem)) {
+
+            return SET_SIGNATURE.SET_REG_MEM;
+
+         } else if (dst.matches(regex_register) && src.matches(regex_plus_reg_reg)) {
+
+            return SET_SIGNATURE.SET_REG_PLUS; 
+ 
+         } else if (dst.matches(regex_register)&&src.matches(regex_plus_reg_const)){
+
+            return SET_SIGNATURE.SET_REG_PLUS;
+
+         }
+ 
+      } else if (type == InstructionType.PLUS) {
+
+         System.out.println("PLUS- dst " + dst + " src: " + src);
+         if (dst.matches(regex_register) && src.matches(regex_const_int)) {
+
+            return SET_SIGNATURE.PLUS_REG_CONST;
+
+         } else if (dst.matches(regex_register_f) && src.matches(regex_const_int)) {
+
+            return SET_SIGNATURE.PLUS_REG_F_CONST;
+
+         } else if (dst.matches(regex_register) && src.matches(regex_register)) {
+            return SET_SIGNATURE.PLUS_REG_REG;
+
+         } else if (dst.matches(regex_register) && src.matches(regex_plus_reg_reg)) {
+            return SET_SIGNATURE.PLUS_REG_REG;
+
+         }
+ 
+      } 
+
+      return SET_SIGNATURE.UNKOWN;  
+   }
+
+
+  /** 
+   * Method to convert a virtual register to its corresponding home value
+   *
+   * @param Instruction insn
+   * @param boolean virtual-stack-vars
+   * @return String representation of the register's home register 
+   */
    private String getRegister (Instruction insn, boolean vsv) {
-      return reg_map.getOrDefault((String)insn.getAttributes().get(ARG_LOC), Integer.toString(1001));
+      String reg_num = (String) insn.getAttributes().get(ARG_LOC);
+      String t_reg_num = reg_map.getOrDefault(reg_num, Integer.toString(1001));
+      return t_reg_num;
    }
 }

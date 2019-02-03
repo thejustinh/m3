@@ -68,7 +68,7 @@ public class GenerateAssembly {
                write to ASM file. */
             for (int i = BB_START; i < graph.size(); i++) {     
                 for (Instruction insn : graph.get(i)) {
-                    String out = armify(insn);
+                    String out = armify(insn, writer);
                     System.out.println(out);
                 }
             }
@@ -87,7 +87,7 @@ public class GenerateAssembly {
     * @param Instruction insn 
     * @return String insn in ARM format
     */
-    private static String armify (Instruction insn) {
+    private static String armify (Instruction insn, FileWriter writer) {
         InstructionType type = insn.getType();
         StringBuilder out = new StringBuilder();
         out.append(insn.getCurrID());
@@ -102,7 +102,12 @@ public class GenerateAssembly {
                 
                 out.append("\tDST: "+arm.getArmDestination() + "\n"); 
                 out.append("\tSRC: " + arm.getArmSource() + "\n");
-                out.append(arm.toString() + "\n"); 
+                out.append(arm.toString() + "\n");
+                try {
+                    writer.write(arm.toString());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
             case JUMP_INSN:
                 out.append(" JUMP\n");
