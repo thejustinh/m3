@@ -6,8 +6,8 @@ import java.util.HashMap;
 public class Instruction {
 
    private static final int OPR_LOC = 5;
-   private static final int SRC_LOC = 1;
-   private static final int DST_LOC = 2;
+   private static final int SRC_LOC = 2;
+   private static final int DST_LOC = 1;
 
    private String insn;
    private ArrayList<Object> attributes;
@@ -230,19 +230,39 @@ public class Instruction {
 
    public void findRegisters(HashMap<String, String> reg_map, Counter counter) {
       if (insn_type == InstructionType.REG_SI) {
-         String reg_num = (String)attributes.get(SRC_LOC);
+         String reg_num = (String)attributes.get(DST_LOC);
          
          if(!reg_map.containsKey(reg_num)) {
             reg_map.put(reg_num, "[fp, #-" + Integer.toString(counter.getCount() * 4) + "]");
             counter.increment();
+            System.out.println("REG_NUM: " + reg_num + " Location: " + reg_map.get(reg_num));
          }
          
-
-         System.out.println("REG_NUM: " + reg_num + " Location: " + reg_map.get(reg_num));
-         
          return;
-      }  
+      } 
+      /*
+      if(insn_type == InstructionType.PLUS) { // stack pointer??
+         try {
+            Instruction stack_check = (Instruction)attributes.get(DST_LOC);
+            Instruction offset_check = (Instruction)attributes.get(SRC_LOC);
 
+            if(stack_check.getType() == InstructionType.REG_F_SI) {
+               String sp_num = (String)attributes.get(DST_LOC);
+            }
+            if(offset_check.getType() == InstructionType.REG_SI) {
+               String reg_num = (String)attributes.get(DST_LOC);
+            }
+            String stack_ptr = "[" + sp_num + ", #" + reg_num + "]";
+            if(!reg_map.containsKey(stack_ptr)) {
+
+            }
+         }
+         catch (Exception e) {
+
+         }
+         
+      } 
+      */
       for(int i = 0; i < attributes.size(); i++) {
          Object temp = attributes.get(i);
          if(temp instanceof Instruction) {

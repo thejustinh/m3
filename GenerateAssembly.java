@@ -99,9 +99,10 @@ public class GenerateAssembly {
                 out.append(" INSN\n");
                 Instruction s_exp = insn.getSExp();
                 ARMInstruction arm = new ARMInstruction(s_exp, reg_map, reg_count);
-                System.out.println(arm.toString());
+                
                 out.append("\tDST: "+arm.getArmDestination() + "\n"); 
-                out.append("\tSRC: " + arm.getArmSource() + "\n"); 
+                out.append("\tSRC: " + arm.getArmSource() + "\n");
+                out.append(arm.toString() + "\n"); 
                 break;
             case JUMP_INSN:
                 out.append(" JUMP\n");

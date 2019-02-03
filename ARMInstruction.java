@@ -87,16 +87,44 @@ public class ARMInstruction {
             out.append(" NOTE");
             break;
          case SET: // NON-TERMINAL
-            dst_res = rtl2arm(this.insn_destination);
             src_res = rtl2arm(this.insn_source);
-        
-            out.append("LDR or STR " + dst_res + ", " +  src_res);
+            dst_res = rtl2arm(this.insn_destination);
+            
+            /* destination is sp -# and src is register */
+            if(dst_res.contains("[") && src_res.contains("[fp")) {
+              reg_map.put(dst_res, src_res);
+              reg_count.increment();
+              System.out.println("REG_NUM: " + dst_res + " Location: " + reg_map.get(dst_res));
+            }
+            /* set reg #c */
+            else if (dst_res.contains("[fp") && src_res.charAt(0) == '#') {
+              out.append("mov r4, " + src_res + "\n");
+              out.append("str r4, " + dst_res + "\n");
+            }
+            /* set reg mem */
+            else if(dst_res.contains("[fp") && src_res.contains("[")) {
+              out.append("ldr r4, " + reg_map.get(src_res) + "\n");
+              out.append("str r4, " + dst_res + "\n"); // maybe not right
+            }
+            else if(dst_res.contains("[fp") && src_res.contains("xx")) {
+              out.append("add " + dst_res + " " + src_res.substring(2));
+            }
+            else if(dst_res.contains("[fp") && src_res.contains("[[")) {
+              int index = src_res.indexOf("]");
+              String source = src_res.substring(1, index);
+              out.append("ldr r4, " + source + "\n");
+              out.append("add r0, r4, " + src_res.substring(index+1,src_res.length()-1) + "\n");
+              out.append("str r0, " + dst_res + "\n");
+            }
+            //out.append("LDR or STR " + dst_res + ", " +  src_res);
             break;
          case REG_SI:
             out.append(getRegister(insn, false));
             break;
          case REG_F_SI:
-            out.append(getRegister(insn, true));
+            String sp_num = (String)insn.getAttributes().get(DST_LOC);
+            out.append(sp_num);
+            //out.append(getRegister(insn, true));
             break;
          case REG_I_SI:
             out.append(getRegister(insn, false));
@@ -111,6 +139,7 @@ public class ARMInstruction {
             out.append(dst_res);
             break;
          case CONST_INT: // TERMINAL
+            //out.append("mov r4, " + src_res);
             out.append("#" + (String) insn.getAttributes().get(ARG_LOC));
             break;
          case COMPARE_CC:
@@ -127,7 +156,15 @@ public class ARMInstruction {
             dst_res = rtl2arm(dst); 
             src_res = rtl2arm(src);
 
-            out.append("[" + dst_res + ", " + src_res + "]");
+            /*check if both are registers*/
+            if(dst_res.contains("[") && src_res.contains("[")) {
+              out.append("xxr4, r5");
+            }
+            else {
+              out.append("[" + dst_res + ", " + src_res + "]");
+            }
+
+            
             break;
          default:
             return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED";
@@ -137,6 +174,6 @@ public class ARMInstruction {
    }
 
    private String getRegister (Instruction insn, boolean vsv) {
-      return (String) insn.getAttributes().get(ARG_LOC);
+      return reg_map.getOrDefault((String)insn.getAttributes().get(ARG_LOC), Integer.toString(1001));
    }
 }
