@@ -22,6 +22,7 @@ public class GenerateAssembly {
     private static final int BB_START = 2;
     private static ArrayList<LinkedList<Instruction>> graph = new ArrayList<>();
     private static HashMap<String, String> reg_map = new HashMap<>();
+    private static HashMap<String, String> jump_label_map = new HashMap<>();
     private static Counter reg_count = new Counter();
 
     public static void main (String[] args) {
@@ -110,9 +111,11 @@ public class GenerateAssembly {
                 }
                 break;
             case JUMP_INSN:
+                insn.storeJumpLabel(jump_label_map);
                 out.append(" JUMP\n");
                 break;
             case CODE_LABEL:
+                out.append()
                 out.append(" CODE_LABEL\n");
                 break;
             default:

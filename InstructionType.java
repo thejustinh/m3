@@ -5,6 +5,7 @@ public enum InstructionType {
     BARRIER, 
     CODE_LABEL, 
     JUMP_INSN,
+    LABEL_REF,
  
     SET,
     USE,

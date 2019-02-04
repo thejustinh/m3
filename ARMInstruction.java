@@ -264,7 +264,7 @@ public class ARMInstruction {
  
       } else if (type == InstructionType.PLUS) {
 
-         System.out.println("PLUS- dst " + dst + " src: " + src);
+         //System.out.println("PLUS- dst " + dst + " src: " + src);
          if (dst.matches(regex_register) && src.matches(regex_const_int)) {
 
             return SET_SIGNATURE.PLUS_REG_CONST;

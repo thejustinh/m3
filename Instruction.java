@@ -2,6 +2,7 @@ import java.util.Stack;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.lang.StringBuilder;
 
 public class Instruction {
 
@@ -153,6 +154,9 @@ public class Instruction {
          case "const_int":
             insn_type = InstructionType.CONST_INT;
             break;
+         case "label_ref":
+            insn_type = InstructionType.LABEL_REF;
+            break;
          default: 
             insn_type = InstructionType.DEFAULT;
       }
@@ -240,29 +244,6 @@ public class Instruction {
          
          return;
       } 
-      /*
-      if(insn_type == InstructionType.PLUS) { // stack pointer??
-         try {
-            Instruction stack_check = (Instruction)attributes.get(DST_LOC);
-            Instruction offset_check = (Instruction)attributes.get(SRC_LOC);
-
-            if(stack_check.getType() == InstructionType.REG_F_SI) {
-               String sp_num = (String)attributes.get(DST_LOC);
-            }
-            if(offset_check.getType() == InstructionType.REG_SI) {
-               String reg_num = (String)attributes.get(DST_LOC);
-            }
-            String stack_ptr = "[" + sp_num + ", #" + reg_num + "]";
-            if(!reg_map.containsKey(stack_ptr)) {
-
-            }
-         }
-         catch (Exception e) {
-
-         }
-         
-      } 
-      */
       for(int i = 0; i < attributes.size(); i++) {
          Object temp = attributes.get(i);
          if(temp instanceof Instruction) {
@@ -271,6 +252,14 @@ public class Instruction {
          }
       }
    }
+
+    public void storeJumpLabel (HashMap<String, String> jump_label_map) {
+         StringBuilder label = new StringBuilder();
+         label.append(".l" + (String)attributes.get(attributes.size()-1));
+         jump_label_map.put((String)attributes.get(attributes.size()-1), label.toString());
+         System.out.println("label: " + attributes.get(attributes.size()-1) + " output: " + label.toString());
+         return;
+    }
 
    public static void main(String[] args) {
       HashMap<String, String> reg_map = new HashMap<>(); 
