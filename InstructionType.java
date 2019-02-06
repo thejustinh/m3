@@ -6,6 +6,7 @@ public enum InstructionType {
     CODE_LABEL, 
     JUMP_INSN,
     LABEL_REF,
+    PC,
  
     SET,
     USE,

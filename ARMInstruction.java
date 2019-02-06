@@ -18,8 +18,9 @@ public class ARMInstruction {
       PLUS_REG_REG,
       PLUS_REG_CONST,
       PLUS_REG_F_CONST,
+      JUMP_COMPARE_CONST,
       UNKOWN
-   } 
+   };
 
    private static final int DST_LOC = 1;
    private static final int SRC_LOC = 2;
@@ -41,6 +42,8 @@ public class ARMInstruction {
    /* Register map and counts */
    private HashMap<String, String> reg_map;
    private Counter reg_count;
+   private Boolean[] regs_avail;
+
   /*************************
    * ACCESSOR METHODS
    ************************/ 
@@ -51,9 +54,10 @@ public class ARMInstruction {
   /*************************
    * CONSTRUCTOR
    ************************/ 
-   public ARMInstruction (Instruction insn, HashMap<String, String> reg_map, Counter reg_count) {
+   public ARMInstruction (Instruction insn, HashMap<String, String> reg_map, Counter reg_count, Boolean[] regs_avail) {
       this.insn = insn.getInsn();
       this.insn_type = insn.getType();
+      this.regs_avail = regs_avail;
 
       this.reg_map = reg_map;
       this.reg_count = reg_count;
@@ -110,8 +114,9 @@ public class ARMInstruction {
          case REG_I_SI:
             out.append(getRegister(insn, false));
             break;
-         case REG_CC:
-            out.append(getRegister(insn, false));
+         case REG_CC: //this isnt a reg virtual reg... is condition code reg for booleans
+            //out.append(getRegister(insn, false));
+            out.append("CC " + (String)insn.getAttributes().get(DST_LOC) + "\n");
             break;
          case MEM_C_SI: // NON-TERMINAL
             dst = (Instruction) insn.getAttributes().get(DST_LOC); 
@@ -136,8 +141,14 @@ public class ARMInstruction {
             signature = evalSet(type, dst_res, src_res);
             out.append(signature);
             break;
+          case PC:
+            out.append("PC\n"); 
+            break;
+          case LABEL_REF:
+            out.append("label_ref " + insn.getAttributes().get(DST_LOC) + "\n");
+            break;
          default:
-            return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED";
+            return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED\n";
       }
 
       return out.toString();
@@ -165,8 +176,8 @@ public class ARMInstruction {
 
       } else if (signature == SET_SIGNATURE.SET_REG_CONST) { 
 
-          arm_out.append("\tmov r4, " + src + "\n"); 
-          arm_out.append("\tstr r4, " + dst + "\n");
+          arm_out.append("\tmov r2, " + src + "\n"); 
+          arm_out.append("\tstr r2, " + dst + "\n");
 
       } else if (signature == SET_SIGNATURE.SET_REG_MEM) {
 
@@ -175,8 +186,17 @@ public class ARMInstruction {
           * EX: if we load the data at mem[X] into r5. We cannot overwrite this
           * register in later instructions.
           */
-          
-         arm_out.append("\tldr r4, " + reg_map.get(src) + "\n");
+          String reg = "r";
+          for(int i = regs_avail.length-1; i >= 0; i--) {
+            if(regs_avail[i] == true) {
+              reg += Integer.toString(i);
+              regs_avail[i] = false;
+              break;
+            }
+          }
+
+         arm_out.append("\tldr " + reg +", " + reg_map.get(src) + "\n");
+         arm_out.append("\tstr " + reg +", " + reg_map.get(dst) + "\n");
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
 
@@ -187,7 +207,24 @@ public class ARMInstruction {
           * respectively, we would have to figure out in this call that it was
           * actually loaded into r3 and r4
           */
-         arm_out.append(dst + ", " + src); 
+         String reg_1 = "r";
+         String reg_2 = "r";
+         for(int i = 0; i < regs_avail.length; i++) {
+            if(regs_avail[i] == false) {
+              reg_1 += Integer.toString(i);
+              regs_avail[i] = true;
+              break;
+            }
+         }
+         for(int i = 0; i < regs_avail.length; i++) {
+            if(regs_avail[i] == false) {
+              reg_2 += Integer.toString(i);
+              regs_avail[i] = true;
+              break;
+            }
+         }
+         arm_out.append("\tadd r0, " + reg_1 + ", " + reg_2 + "\n");
+         //arm_out.append(dst + ", " + src); 
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_CONST) {
 
@@ -204,13 +241,15 @@ public class ARMInstruction {
          arm_out.append("\tadd " + dst + ", " + src + "\n"); 
     
       } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
-
-      
-
+          //???
+      } else if (signature == SET_SIGNATURE.JUMP_COMPARE_CONST) {
+          arm_out.append("jump compare const\n");
+          //String[] compare_ops = src.substring(8).split(", ");
+          //arm_out.append("RAWRAWRAWRAWRAWR " + compare_ops[0] + " sfafa " + compare_ops[1]);
       } else {
 
          System.out.println("\tTYPE: " + type + " dst: " + dst + " src: " + src);
-         arm_out.append("\tARMInstruction evalSet(): Unsupported Set Signature!");
+         arm_out.append("\tARMInstruction evalSet(): Unsupported Set Signature!\n");
 
       }
 
@@ -237,6 +276,8 @@ public class ARMInstruction {
       String regex_const_int = "#.*";
       String regex_plus_reg_reg = "\\[.*\\], \\[.*\\]"; 
       String regex_plus_reg_const = "\\[.*\\], #.*";
+      String regex_jump_cond_reg_const = "COMPARE \\[.*\\], #.*";
+      String regex_jump_cond_counter = "CC [0-9]+";
 
       if (type == InstructionType.SET) {
 
@@ -260,7 +301,11 @@ public class ARMInstruction {
 
             return SET_SIGNATURE.SET_REG_PLUS;
 
-         }
+         } else if(dst.matches(regex_jump_cond_counter) && src.matches(regex_jump_cond_reg_const)) {
+            
+            return SET_SIGNATURE.JUMP_COMPARE_CONST;
+          
+          }
  
       } else if (type == InstructionType.PLUS) {
 
@@ -281,7 +326,9 @@ public class ARMInstruction {
 
          }
  
-      } 
+      } else if (type == InstructionType.JUMP_INSN) {
+          
+      }
 
       return SET_SIGNATURE.UNKOWN;  
    }
@@ -298,5 +345,11 @@ public class ARMInstruction {
       String reg_num = (String) insn.getAttributes().get(ARG_LOC);
       String t_reg_num = reg_map.getOrDefault(reg_num, Integer.toString(1001));
       return t_reg_num;
+   }
+
+   private void reset_regs(Boolean[] regs) {
+      for(int i = 0; i < regs.length; i++) {
+        regs[i] = true;
+      }
    }
 }

@@ -24,6 +24,8 @@ public class GenerateAssembly {
     private static HashMap<String, String> reg_map = new HashMap<>();
     private static HashMap<String, String> jump_label_map = new HashMap<>();
     private static Counter reg_count = new Counter();
+    private static Boolean[] regs_avail = {true, true, true};
+
 
     public static void main (String[] args) {
 
@@ -55,15 +57,17 @@ public class GenerateAssembly {
             FileWriter writer = new FileWriter(file2);
 
             /* Method to populate graph from RTL file */        
-            generateGraph(fis);
+            generateGraph(fis); // should have registers calculated by now
 
             /* Write initialize lines to ASM file*/
             writer.write("\t.arch armv7-a\n\t.text\n\t.global main\n");
 
             writer.write("main:\n"); // TODO: Function name hardcoded
             writer.write("\tpush {fp, lr}\n");
+            writer.write("\tstr fp, [sp, #-4]! \\\\ need this? \n"); // need this??
+            
             writer.write("\tmov fp, sp\n");
-            writer.write("\tsub sp, sp #Calculated Later\n");
+            writer.write("\tsub sp, sp, #"+ Integer.toString(reg_count.getCount() * 4) + "\n");
 
             /* Loop through graph to convert each RTL insn to ARM insn and 
                write to ASM file. */
@@ -73,6 +77,8 @@ public class GenerateAssembly {
                     System.out.println(out);
                 }
             }
+
+            
 
             writer.flush();
             writer.close();
@@ -91,6 +97,8 @@ public class GenerateAssembly {
     private static String armify (Instruction insn, FileWriter writer) {
         InstructionType type = insn.getType();
         StringBuilder out = new StringBuilder();
+        ARMInstruction arm;
+        Instruction s_exp;
         out.append(insn.getCurrID());
         switch (type) {
             case NOTE:
@@ -98,8 +106,8 @@ public class GenerateAssembly {
                 break;
             case INSN:
                 out.append(" INSN\n");
-                Instruction s_exp = insn.getSExp();
-                ARMInstruction arm = new ARMInstruction(s_exp, reg_map, reg_count);
+                s_exp = insn.getSExp();
+                arm = new ARMInstruction(s_exp, reg_map, reg_count, regs_avail);
                 
                 out.append("\tDST: "+arm.getArmDestination() + "\n"); 
                 out.append("\tSRC: " + arm.getArmSource() + "\n");
@@ -111,12 +119,26 @@ public class GenerateAssembly {
                 }
                 break;
             case JUMP_INSN:
-                insn.storeJumpLabel(jump_label_map);
                 out.append(" JUMP\n");
+                
+                s_exp = insn.getSExp(); // set pc..
+                arm = new ARMInstruction(s_exp, reg_map, reg_count, regs_avail);
+
+                //out.append("\tDST: "+arm.getArmDestination() + "\n"); 
+                //out.append("\tSRC: " + arm.getArmSource() + "\n");
+
+                
                 break;
             case CODE_LABEL:
-                out.append()
+
                 out.append(" CODE_LABEL\n");
+                
+                try {
+                    writer.write(".L" + (String)insn.getAttributes().get(1) + ":\n");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                //out.append(jump_label_map.get(insn.getAttributes().get(1)) + ":\n");
                 break;
             default:
                 out.append(" GenerateAssembly: OPERATION NOT SUPPORTED\n");

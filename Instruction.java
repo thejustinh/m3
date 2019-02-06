@@ -157,6 +157,9 @@ public class Instruction {
          case "label_ref":
             insn_type = InstructionType.LABEL_REF;
             break;
+         case "pc":
+            insn_type = InstructionType.PC;
+            break;
          default: 
             insn_type = InstructionType.DEFAULT;
       }
@@ -255,17 +258,17 @@ public class Instruction {
 
     public void storeJumpLabel (HashMap<String, String> jump_label_map) {
          StringBuilder label = new StringBuilder();
-         label.append(".l" + (String)attributes.get(attributes.size()-1));
+         label.append(".L" + (String)attributes.get(attributes.size()-1));
          jump_label_map.put((String)attributes.get(attributes.size()-1), label.toString());
-         System.out.println("label: " + attributes.get(attributes.size()-1) + " output: " + label.toString());
+         //System.out.println("label: " + attributes.get(attributes.size()-1) + " output: " + label.toString());
          return;
     }
 
    public static void main(String[] args) {
       HashMap<String, String> reg_map = new HashMap<>(); 
       Counter virtual_reg_count = new Counter();
-
-      String test = "(insn 18 17 19 4 (set (reg:SI 116) (plus:SI (reg:SI 117) (reg:SI 118))) \"fib.c\":8 -1 (nil))";
+      Boolean[] rawr = {true, true, true};
+      String test = "(jump_insn 32 31 33 5 (set (pc) (if_then_else (le (reg:CC 100 cc) (const_int 0 [0])) (label_ref 29) (pc))) \"fib.c\":7 -1 (nil) -> 29)";
       //String test_2 = "(a b c (d e f))";
       //System.out.println(test);
       Instruction in = new Instruction(test);
@@ -277,7 +280,15 @@ public class Instruction {
       //System.out.print("{");
       //in.printAll();
       //System.out.print("}");
-      //System.out.println();
+
+      System.out.print(rawr[2]);
+      helper(rawr);
+      System.out.print(rawr[2]);
+   }
+
+   private static void helper(Boolean[] rawr) {
+      
+      rawr[2] = false;
    }
    
 
