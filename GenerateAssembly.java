@@ -78,7 +78,10 @@ public class GenerateAssembly {
                 }
             }
 
-            
+            writer.write("\tmov sp, fp\n");
+            writer.write("\tpop {fp, pc}\n");
+
+
 
             writer.flush();
             writer.close();
@@ -107,6 +110,16 @@ public class GenerateAssembly {
             case INSN:
                 out.append(" INSN\n");
                 s_exp = insn.getSExp();
+                System.out.println("TYPE OF S_EXP: " + s_exp.getType());
+                if(s_exp.getType() == InstructionType.USE) {
+                    try {
+                        writer.write("\tldr fp, [sp], #4\n");
+                        writer.write("\tbx lr\n");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                }
                 arm = new ARMInstruction(s_exp, reg_map, reg_count, regs_avail);
                 
                 out.append("\tDST: "+arm.getArmDestination() + "\n"); 
@@ -123,22 +136,30 @@ public class GenerateAssembly {
                 
                 s_exp = insn.getSExp(); // set pc..
                 arm = new ARMInstruction(s_exp, reg_map, reg_count, regs_avail);
-
+                out.append("\tDST: "+arm.getArmDestination() + "\n"); 
+                out.append("\tSRC: " + arm.getArmSource() + "\n");
+                out.append(arm.toString() + "\n");
+                try {
+                    writer.write(arm.toString());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 //out.append("\tDST: "+arm.getArmDestination() + "\n"); 
                 //out.append("\tSRC: " + arm.getArmSource() + "\n");
 
                 
                 break;
             case CODE_LABEL:
-
                 out.append(" CODE_LABEL\n");
-                
                 try {
                     writer.write(".L" + (String)insn.getAttributes().get(1) + ":\n");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 //out.append(jump_label_map.get(insn.getAttributes().get(1)) + ":\n");
+                break;
+            case USE: 
+                
                 break;
             default:
                 out.append(" GenerateAssembly: OPERATION NOT SUPPORTED\n");

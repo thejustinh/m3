@@ -18,8 +18,11 @@ public class ARMInstruction {
       PLUS_REG_REG,
       PLUS_REG_CONST,
       PLUS_REG_F_CONST,
-      JUMP_COMPARE_CONST,
+      COMPARE_CONST,
       SET_ADD_REG_REG,
+      SET_PC_LABEL,
+      SET_B_CONDITIONAL,
+      SET_COND_JUMP,
       UNKOWN
    };
 
@@ -38,7 +41,7 @@ public class ARMInstruction {
    private String arm_source;
 
    /* Finalized converted ARM string */
-   private String arm_string;
+   private String arm_string = "";
 
    /* Register map and counts */
    private HashMap<String, String> reg_map;
@@ -64,16 +67,19 @@ public class ARMInstruction {
       this.reg_count = reg_count;
 
       this.insn_destination=(Instruction)(insn.getAttributes()).get(DST_LOC);
-      this.arm_destination = rtl2arm (this.insn_destination);
+      //this.arm_destination = rtl2arm (this.insn_destination);
 
       /* This case checks to see the S Exp is of type SET. Otherwise, it could
          be type USE which does not have a source expression */
+      /*
+      
+      */
       if (this.insn_type == InstructionType.SET) {
-         this.insn_source = (Instruction) insn.getAttributes().get(SRC_LOC);
-         this.arm_source = rtl2arm (this.insn_source);
+          this.insn_source = (Instruction) insn.getAttributes().get(SRC_LOC);
+          //this.arm_source = rtl2arm (this.insn_source);
+          this.arm_string = rtl2arm (insn);
       }
-
-      this.arm_string = rtl2arm (insn);
+     
    }
 
   /*************************
@@ -113,7 +119,7 @@ public class ARMInstruction {
             out.append((String)insn.getAttributes().get(DST_LOC));
             break;
          case REG_I_SI:
-            out.append(getRegister(insn, false));
+            out.append();
             break;
          case REG_CC: //this isnt a reg virtual reg... is condition code reg for booleans
             //out.append(getRegister(insn, false));
@@ -142,15 +148,35 @@ public class ARMInstruction {
             //System.out.println(dst_res);
             //System.out.println(src_res);
             signature = evalSet(type, dst_res, src_res);
-            System.out.println("SIG: " + signature);
+            //System.out.println("SIG: " + signature);
             out.append(signature);
             break;
           case PC:
             out.append("PC"); 
             break;
           case LABEL_REF:
-            out.append("label_ref " + insn.getAttributes().get(DST_LOC));
+            out.append(insn.getAttributes().get(DST_LOC));
             break;
+          case IF_THEN_ELSE:
+            dst = (Instruction) insn.getAttributes().get(DST_LOC); // le(condition) (cc) (const_int 0)
+            src = (Instruction) insn.getAttributes().get(SRC_LOC); // label
+            dst_res = rtl2arm(dst); //condition (ie -> le)
+            src_res = rtl2arm(src); //jump destination (label xx)
+            //signature = evalSet(type, dst_res, src_res);
+            //System.out.println("RAWR " + signature);
+            out.append("b" + dst_res + " .L" + src_res); // IF_THEN_ELSE
+            break;
+            //out.append()
+          case LE: 
+            out.append("le");
+            break; 
+          case USE: 
+            //dst = (Instruction) insn.getAttributes().get(DST_LOC); 
+            //src = (Instruction) insn.getAttributes().get(SRC_LOC); 
+            //dst_res = rtl2arm(dst);  
+            //src_res = rtl2arm(src);
+            out.append("use");
+
          default:
             return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED\n";
       }
@@ -248,18 +274,24 @@ public class ARMInstruction {
 
       } else if (signature == SET_SIGNATURE.SET_REG_PLUS) {
 
-         arm_out.append("add " + dst + ", " + src + "\n"); 
+         arm_out.append("\tadd r2, r2, " + src.substring(12) + "\n"); 
     
-      } else if (signature == SET_SIGNATURE.JUMP_COMPARE_CONST) {
-          arm_out.append("jump compare const\n");
+      } else if (signature == SET_SIGNATURE.COMPARE_CONST) {
+          //arm_out.append("dst: " + dst + "\n");
+          //arm_out.append("src: " + src + "\n");
+          arm_out.append("\tcmp r2, " + src.substring(20) + "\n"); //HACKKKKKKK
           //String[] compare_ops = src.substring(8).split(", ");
           //arm_out.append("RAWRAWRAWRAWRAWR " + compare_ops[0] + " sfafa " + compare_ops[1]);
       } else if (signature == SET_SIGNATURE.SET_ADD_REG_REG) {
-
-
-          arm_out.append("\tadd r0, " + src + "\n");
+          arm_out.append("\tadd r2, " + src + "\n");
           arm_out.append("\tstr r0, " + dst + "\n");
-      } 
+      } else if (signature == SET_SIGNATURE.SET_PC_LABEL) {
+          arm_out.append("\tb .L" +  src + "\n");
+      } else if (signature == SET_SIGNATURE.SET_B_CONDITIONAL) {
+          //"if then else???"
+      } else if (signature == SET_SIGNATURE.SET_COND_JUMP) {
+          arm_out.append("\t" + src + "\n");
+      }
       else {
 
          System.out.println("\tTYPE: " + type + " dst: " + dst + " src: " + src);
@@ -290,10 +322,14 @@ public class ARMInstruction {
       String regex_const_int = "#.*";
       String regex_plus_reg_reg = "\\[.*\\], \\[.*\\]"; 
       String regex_plus_reg_const = "\\[.*\\], #.*";
-      String regex_jump_cond_reg_const = "COMPARE \\[.*\\], #.*";
-      String regex_jump_cond_counter = "CC [0-9]+";
+      String regex_cond_compare = "COMPARE \\[.*\\], #.*";
+      String regex_cc = "CC [0-9]+";
       //String regex_add_regs = "add regs \\[.*\\], \\[.*\\]";
       String regex_add_regs = "r[0-9]+, r[0-9]+";
+      String regex_pc = "PC";
+      String regex_label_rf = "[0-9]+";
+      String regex_jump_cond = "le"; // maybe later ge, gt, lt
+      String regex_if_then_else = "ble .L[0-9]+";
 
       if (type == InstructionType.SET) {
 
@@ -317,12 +353,18 @@ public class ARMInstruction {
 
             return SET_SIGNATURE.SET_REG_PLUS;
 
-         } else if(dst.matches(regex_jump_cond_counter) && src.matches(regex_jump_cond_reg_const)) {
+         } else if(dst.matches(regex_cc) && src.matches(regex_cond_compare)) {
             
-            return SET_SIGNATURE.JUMP_COMPARE_CONST;
+            return SET_SIGNATURE.COMPARE_CONST;
           
           } else if (dst.matches(regex_register) && src.matches(regex_add_regs)) {
               return SET_SIGNATURE.SET_ADD_REG_REG;
+          } else if (dst.matches(regex_pc) && src.matches(regex_label_rf)) {
+              return SET_SIGNATURE.SET_PC_LABEL;
+          } else if (dst.matches(regex_jump_cond) && src.matches(regex_label_rf)) {
+              return SET_SIGNATURE.SET_B_CONDITIONAL;
+          } else if (dst.matches(regex_pc) && src.matches(regex_if_then_else)) {
+              return SET_SIGNATURE.SET_COND_JUMP;
           }
  
       } else if (type == InstructionType.PLUS) {

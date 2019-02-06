@@ -7,6 +7,8 @@ public enum InstructionType {
     JUMP_INSN,
     LABEL_REF,
     PC,
+    IF_THEN_ELSE,
+    LE,
  
     SET,
     USE,

@@ -160,6 +160,15 @@ public class Instruction {
          case "pc":
             insn_type = InstructionType.PC;
             break;
+         case "if_then_else":
+            insn_type = InstructionType.IF_THEN_ELSE;
+            break;
+         case "le":  
+            insn_type = InstructionType.LE;
+            break;
+         case "use": 
+            insn_type = InstructionType.USE;
+            break;
          default: 
             insn_type = InstructionType.DEFAULT;
       }
@@ -268,22 +277,22 @@ public class Instruction {
       HashMap<String, String> reg_map = new HashMap<>(); 
       Counter virtual_reg_count = new Counter();
       Boolean[] rawr = {true, true, true};
-      String test = "(jump_insn 32 31 33 5 (set (pc) (if_then_else (le (reg:CC 100 cc) (const_int 0 [0])) (label_ref 29) (pc))) \"fib.c\":7 -1 (nil) -> 29)";
-      //String test_2 = "(a b c (d e f))";
+      //String test = "(jump_insn 32 31 33 5 (set (pc) (if_then_else (le (reg:CC 100 cc) (const_int 0 [0])) (label_ref 29) (pc))) \"fib.c\":7 -1 (nil) -> 29)";
+      String test_2 = "(insn 42 41 0 6 (use (reg/i:SI 0 r0)) \"fib.c\":13 -1 (nil))";
       //System.out.println(test);
-      Instruction in = new Instruction(test);
+      Instruction in = new Instruction(test_2);
       in.parseSExpressions();
       in.setTypes();
       in.setBasicBlock();
       in.findRegisters(reg_map, virtual_reg_count);
       //in.print_type_and_bb();
-      //System.out.print("{");
-      //in.printAll();
-      //System.out.print("}");
+      System.out.print("{");
+      in.printAll();
+      System.out.print("}");
 
-      System.out.print(rawr[2]);
-      helper(rawr);
-      System.out.print(rawr[2]);
+      //System.out.print(rawr[2]);
+      //helper(rawr);
+      //System.out.print(rawr[2]);
    }
 
    private static void helper(Boolean[] rawr) {
