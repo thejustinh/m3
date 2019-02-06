@@ -245,6 +245,7 @@ public class ARMInstruction {
       } else if (signature == SET_SIGNATURE.SET_REG_PLUS) {
 
          arm_out.append("\tadd r2, r2, " + src.substring(12) + "\n"); 
+         arm_out.append("\tstr r2 " + dst + "\n"); 
     
       } else if (signature == SET_SIGNATURE.COMPARE_CONST) {
           //arm_out.append("dst: " + dst + "\n");
@@ -282,7 +283,7 @@ public class ARMInstruction {
    }
 
   /**
-   * Method to determine the RTL instruction signature based on the destination
+   * MSethod to determine the RTL instruction signature based on the destination
    * and source S Expressions
    *
    * This method uses regular expressions to match a dst or source expression

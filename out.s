@@ -30,6 +30,7 @@ main:
 	ldr r2, [fp, #-16]
 	str r2, [fp, #-40]
 	add r2, r2, #1
+	str r2 [fp, #-44]
 .L27:
 	ldr r2, [fp, #-44]
 	str r2, [fp, #-48]
