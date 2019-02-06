@@ -153,6 +153,14 @@ public class GenerateAssembly {
             case USE: 
                 
                 break;
+            case CALL:
+                try {
+
+                    writer.write("\tbl " + insn.getCallFunc() + "\n");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
             default:
                 out.append(" GenerateAssembly: OPERATION NOT SUPPORTED\n");
                 break; 

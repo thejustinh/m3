@@ -169,6 +169,12 @@ public class Instruction {
          case "use": 
             insn_type = InstructionType.USE;
             break;
+         case "call_insn":
+            insn_type = InstructionType.CALL;
+            break;
+         case "symbol_ref:SI":
+            insn_type = InstructionType.SYMBOL_REF;
+            break;
          default: 
             insn_type = InstructionType.DEFAULT;
       }
@@ -273,12 +279,31 @@ public class Instruction {
          return;
     }
 
+    public String getCallFunc() {
+      System.out.println("point 1");
+      if(insn_type == InstructionType.SYMBOL_REF) {
+         Instruction temp = (Instruction)attributes.get(1);
+         String target = (String)temp.getAttributes().get(0);
+         return target.replaceAll("\\\\\"", "");
+      }
+      for (int i = 0; i < attributes.size(); i++){
+         Object temp = attributes.get(i);
+         if(temp instanceof Instruction) {
+            Instruction temp_insn = (Instruction)temp;
+            //System.out.println("recurse");
+            return temp_insn.getCallFunc();
+         }
+      }
+      return "mistake";
+      
+    }
+
    public static void main(String[] args) {
       HashMap<String, String> reg_map = new HashMap<>(); 
       Counter virtual_reg_count = new Counter();
       Boolean[] rawr = {true, true, true};
       //String test = "(jump_insn 32 31 33 5 (set (pc) (if_then_else (le (reg:CC 100 cc) (const_int 0 [0])) (label_ref 29) (pc))) \"fib.c\":7 -1 (nil) -> 29)";
-      String test_2 = "(insn 42 41 0 6 (use (reg/i:SI 0 r0)) \"fib.c\":13 -1 (nil))";
+      String test_2 = "(call_insn 13 12 14 2 (parallel [ (call (mem:SI (symbol_ref:SI (\"printint\") [flags 0x41]  <function_decl 0x768ba180 printint>) [0 printint S4 A32]) (const_int 0 [0])) (use (const_int 0 [0])) (clobber (reg:SI 14 lr)) ]) addwithprint.c:5 -1 (nil) (expr_list (clobber (reg:SI 12 ip)) (expr_list:SI (use (reg:SI 0 r0)) (nil))))";
       //System.out.println(test);
       Instruction in = new Instruction(test_2);
       in.parseSExpressions();
@@ -286,6 +311,7 @@ public class Instruction {
       in.setBasicBlock();
       in.findRegisters(reg_map, virtual_reg_count);
       //in.print_type_and_bb();
+      //Instruction temp = in.getCallFunc();
       System.out.print("{");
       in.printAll();
       System.out.print("}");

@@ -9,6 +9,8 @@ public enum InstructionType {
     PC,
     IF_THEN_ELSE,
     LE,
+    CALL,
+    SYMBOL_REF,
  
     SET,
     USE,
