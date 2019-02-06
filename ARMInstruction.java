@@ -19,6 +19,7 @@ public class ARMInstruction {
       PLUS_REG_CONST,
       PLUS_REG_F_CONST,
       JUMP_COMPARE_CONST,
+      SET_ADD_REG_REG,
       UNKOWN
    };
 
@@ -116,7 +117,7 @@ public class ARMInstruction {
             break;
          case REG_CC: //this isnt a reg virtual reg... is condition code reg for booleans
             //out.append(getRegister(insn, false));
-            out.append("CC " + (String)insn.getAttributes().get(DST_LOC) + "\n");
+            out.append("CC " + (String)insn.getAttributes().get(DST_LOC));
             break;
          case MEM_C_SI: // NON-TERMINAL
             dst = (Instruction) insn.getAttributes().get(DST_LOC); 
@@ -136,16 +137,19 @@ public class ARMInstruction {
          case PLUS: // NON-TERMINAL
             dst = (Instruction) insn.getAttributes().get(DST_LOC); 
             src = (Instruction) insn.getAttributes().get(SRC_LOC); 
-            dst_res = rtl2arm(dst); 
+            dst_res = rtl2arm(dst);  
             src_res = rtl2arm(src);
+            //System.out.println(dst_res);
+            //System.out.println(src_res);
             signature = evalSet(type, dst_res, src_res);
+            System.out.println("SIG: " + signature);
             out.append(signature);
             break;
           case PC:
-            out.append("PC\n"); 
+            out.append("PC"); 
             break;
           case LABEL_REF:
-            out.append("label_ref " + insn.getAttributes().get(DST_LOC) + "\n");
+            out.append("label_ref " + insn.getAttributes().get(DST_LOC));
             break;
          default:
             return "ARMInsn rtl2arm(): OPERATION NOT SUPPORTED\n";
@@ -196,7 +200,7 @@ public class ARMInstruction {
           }
 
          arm_out.append("\tldr " + reg +", " + reg_map.get(src) + "\n");
-         arm_out.append("\tstr " + reg +", " + reg_map.get(dst) + "\n");
+         arm_out.append("\tstr " + reg +", " + dst + "\n");
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
 
@@ -209,22 +213,28 @@ public class ARMInstruction {
           */
          String reg_1 = "r";
          String reg_2 = "r";
+         //System.out.println("RAWR1");
          for(int i = 0; i < regs_avail.length; i++) {
             if(regs_avail[i] == false) {
               reg_1 += Integer.toString(i);
               regs_avail[i] = true;
+              //System.out.println("RAWR2");
               break;
             }
          }
+
          for(int i = 0; i < regs_avail.length; i++) {
             if(regs_avail[i] == false) {
               reg_2 += Integer.toString(i);
               regs_avail[i] = true;
+              //System.out.println("RAWR");
               break;
             }
          }
-         arm_out.append("\tadd r0, " + reg_1 + ", " + reg_2 + "\n");
-         //arm_out.append(dst + ", " + src); 
+
+         //arm_out.append("\tadd r0, " + reg_1 + ", " + reg_2 + "\n");
+         //arm_out.append("\tstr r0, " + dst + "\n");
+         arm_out.append(reg_1 + ", " + reg_2); 
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_CONST) {
 
@@ -238,15 +248,19 @@ public class ARMInstruction {
 
       } else if (signature == SET_SIGNATURE.SET_REG_PLUS) {
 
-         arm_out.append("\tadd " + dst + ", " + src + "\n"); 
+         arm_out.append("add " + dst + ", " + src + "\n"); 
     
-      } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
-          //???
       } else if (signature == SET_SIGNATURE.JUMP_COMPARE_CONST) {
           arm_out.append("jump compare const\n");
           //String[] compare_ops = src.substring(8).split(", ");
           //arm_out.append("RAWRAWRAWRAWRAWR " + compare_ops[0] + " sfafa " + compare_ops[1]);
-      } else {
+      } else if (signature == SET_SIGNATURE.SET_ADD_REG_REG) {
+
+
+          arm_out.append("\tadd r0, " + src + "\n");
+          arm_out.append("\tstr r0, " + dst + "\n");
+      } 
+      else {
 
          System.out.println("\tTYPE: " + type + " dst: " + dst + " src: " + src);
          arm_out.append("\tARMInstruction evalSet(): Unsupported Set Signature!\n");
@@ -278,6 +292,8 @@ public class ARMInstruction {
       String regex_plus_reg_const = "\\[.*\\], #.*";
       String regex_jump_cond_reg_const = "COMPARE \\[.*\\], #.*";
       String regex_jump_cond_counter = "CC [0-9]+";
+      //String regex_add_regs = "add regs \\[.*\\], \\[.*\\]";
+      String regex_add_regs = "r[0-9]+, r[0-9]+";
 
       if (type == InstructionType.SET) {
 
@@ -305,6 +321,8 @@ public class ARMInstruction {
             
             return SET_SIGNATURE.JUMP_COMPARE_CONST;
           
+          } else if (dst.matches(regex_register) && src.matches(regex_add_regs)) {
+              return SET_SIGNATURE.SET_ADD_REG_REG;
           }
  
       } else if (type == InstructionType.PLUS) {

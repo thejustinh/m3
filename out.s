@@ -16,23 +16,23 @@ main:
 	str r2, [fp, #-16]
 .L29:
 	ldr r2, [fp, #-4]
-	str r2, null
+	str r2, [fp, #-20]
 	ldr r1, [fp, #-8]
-	str r1, null
+	str r1, [fp, #-24]
 	ARMInstruction evalSet(): Unsupported Set Signature!
 	ldr r2, [fp, #-8]
-	str r2, null
+	str r2, [fp, #-32]
 	ldr r1, [fp, #-28]
-	str r1, null
+	str r1, [fp, #-36]
 	ldr r0, [fp, #-16]
-	str r0, null
-	add [fp, #-44], [fp, #-40], #1
+	str r0, [fp, #-40]
+add [fp, #-44], [fp, #-40], #1
 .L27:
 	ldr r, [fp, #-44]
-	str r, null
-	ARMInstruction evalSet(): Unsupported Set Signature!
+	str r, [fp, #-48]
+jump compare const
 	ldr r, [fp, #-28]
-	str r, null
+	str r, [fp, #-52]
 	ARMInstruction evalSet(): Unsupported Set Signature!
 	ARMInstruction evalSet(): Unsupported Set Signature!
 ARMInsn rtl2arm(): OPERATION NOT SUPPORTED
