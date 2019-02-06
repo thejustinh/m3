@@ -1,0 +1,3 @@
+gcc -c -o fib.o fib.s
+gcc -o runFib fib.o
+./runFib
