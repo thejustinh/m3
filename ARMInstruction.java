@@ -12,6 +12,7 @@ public class ARMInstruction {
 
    private enum SET_SIGNATURE {
       SET_MEM_REG,
+      SET_REG_REG,
       SET_REG_MEM,
       SET_REG_CONST,
       SET_REG_PLUS,
@@ -23,6 +24,8 @@ public class ARMInstruction {
       SET_PC_LABEL,
       SET_B_CONDITIONAL,
       SET_COND_JUMP,
+      SET_ADD_STR,
+      SET_RETURN_REG,
       UNKOWN
    };
 
@@ -119,7 +122,7 @@ public class ARMInstruction {
             out.append((String)insn.getAttributes().get(DST_LOC));
             break;
          case REG_I_SI:
-            out.append();
+            out.append("reg " + (String) insn.getAttributes().get(DST_LOC));
             break;
          case REG_CC: //this isnt a reg virtual reg... is condition code reg for booleans
             //out.append(getRegister(insn, false));
@@ -211,56 +214,23 @@ public class ARMInstruction {
 
       } else if (signature == SET_SIGNATURE.SET_REG_MEM) {
 
-         /* TODO:This is tricky. Because it is a load register, we must reserve
-          * the register for the given virtual register.
+         /* 
           * EX: if we load the data at mem[X] into r5. We cannot overwrite this
           * register in later instructions.
           */
-          String reg = "r";
-          for(int i = regs_avail.length-1; i >= 0; i--) {
-            if(regs_avail[i] == true) {
-              reg += Integer.toString(i);
-              regs_avail[i] = false;
-              break;
-            }
-          }
-
-         arm_out.append("\tldr " + reg +", " + reg_map.get(src) + "\n");
-         arm_out.append("\tstr " + reg +", " + dst + "\n");
+         
+         arm_out.append("\tldr r2, " + reg_map.get(src) + "\n");
+         arm_out.append("\tstr r2, " + dst + "\n");
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_REG) {
-
-         /* TODO: This case is only true when we have an ADD set. This is
-          * tricky because we have to link a virtual register to the physical
-          * register.
+         /* 
           * EX: if we had data from 111 and 112 that we loaded into r3 and r4
           * respectively, we would have to figure out in this call that it was
           * actually loaded into r3 and r4
           */
-         String reg_1 = "r";
-         String reg_2 = "r";
-         //System.out.println("RAWR1");
-         for(int i = 0; i < regs_avail.length; i++) {
-            if(regs_avail[i] == false) {
-              reg_1 += Integer.toString(i);
-              regs_avail[i] = true;
-              //System.out.println("RAWR2");
-              break;
-            }
-         }
-
-         for(int i = 0; i < regs_avail.length; i++) {
-            if(regs_avail[i] == false) {
-              reg_2 += Integer.toString(i);
-              regs_avail[i] = true;
-              //System.out.println("RAWR");
-              break;
-            }
-         }
-
-         //arm_out.append("\tadd r0, " + reg_1 + ", " + reg_2 + "\n");
-         //arm_out.append("\tstr r0, " + dst + "\n");
-         arm_out.append(reg_1 + ", " + reg_2); 
+         
+         arm_out.append("\tldr r1, " + src + "\n");
+         arm_out.append("\tldr r2, " + dst + "\n");
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_CONST) {
 
@@ -291,8 +261,17 @@ public class ARMInstruction {
           //"if then else???"
       } else if (signature == SET_SIGNATURE.SET_COND_JUMP) {
           arm_out.append("\t" + src + "\n");
-      }
-      else {
+      } else if (signature == SET_SIGNATURE.SET_ADD_STR) {
+          arm_out.append(src);
+          arm_out.append("\tadd r0, r1, r2\n");
+          arm_out.append("\tstr r0, " + dst + "\n");
+      } else if (signature == SET_SIGNATURE.SET_REG_REG) {
+          arm_out.append("\tldr r2, " + src + "\n");
+          arm_out.append("\tstr r2, " + dst + "\n");
+      } else if (signature == SET_SIGNATURE.SET_RETURN_REG) {
+          arm_out.append("\tldr r2, " + src + "\n");
+          arm_out.append("\tmov r0, r2\n");
+      } else {
 
          System.out.println("\tTYPE: " + type + " dst: " + dst + " src: " + src);
          arm_out.append("\tARMInstruction evalSet(): Unsupported Set Signature!\n");
@@ -330,6 +309,8 @@ public class ARMInstruction {
       String regex_label_rf = "[0-9]+";
       String regex_jump_cond = "le"; // maybe later ge, gt, lt
       String regex_if_then_else = "ble .L[0-9]+";
+      String regex_set_plus = "\tldr r1, \\[.*\\]\n\tldr r2, \\[.*\\]\n"; 
+      String regex_reg_return = "reg [0-9]";
 
       if (type == InstructionType.SET) {
 
@@ -365,6 +346,12 @@ public class ARMInstruction {
               return SET_SIGNATURE.SET_B_CONDITIONAL;
           } else if (dst.matches(regex_pc) && src.matches(regex_if_then_else)) {
               return SET_SIGNATURE.SET_COND_JUMP;
+          } else if (dst.matches(regex_register) && src.matches(regex_set_plus)) {
+              return SET_SIGNATURE.SET_ADD_STR;
+          } else if (dst.matches(regex_register) && src.matches(regex_register)) {
+              return SET_SIGNATURE.SET_REG_REG;
+          } else if (dst.matches(regex_reg_return) && src.matches(regex_register)) {
+              return SET_SIGNATURE.SET_RETURN_REG;
           }
  
       } else if (type == InstructionType.PLUS) {

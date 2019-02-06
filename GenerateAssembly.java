@@ -64,8 +64,6 @@ public class GenerateAssembly {
 
             writer.write("main:\n"); // TODO: Function name hardcoded
             writer.write("\tpush {fp, lr}\n");
-            writer.write("\tstr fp, [sp, #-4]! \\\\ need this? \n"); // need this??
-            
             writer.write("\tmov fp, sp\n");
             writer.write("\tsub sp, sp, #"+ Integer.toString(reg_count.getCount() * 4) + "\n");
 
@@ -112,12 +110,6 @@ public class GenerateAssembly {
                 s_exp = insn.getSExp();
                 System.out.println("TYPE OF S_EXP: " + s_exp.getType());
                 if(s_exp.getType() == InstructionType.USE) {
-                    try {
-                        writer.write("\tldr fp, [sp], #4\n");
-                        writer.write("\tbx lr\n");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
                     break;
                 }
                 arm = new ARMInstruction(s_exp, reg_map, reg_count, regs_avail);
