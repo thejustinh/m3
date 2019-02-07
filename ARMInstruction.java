@@ -26,6 +26,7 @@ public class ARMInstruction {
       SET_COND_JUMP,
       SET_ADD_STR,
       SET_RETURN_REG,
+      SET_REG_PLUS_CONST,
       UNKOWN
    };
 
@@ -35,6 +36,7 @@ public class ARMInstruction {
 
    /* RTL attributes for ARM Instruction */
    private String insn;
+   private Instruction curr_insn;
    private InstructionType insn_type;
    private Instruction insn_destination;
    private Instruction insn_source;
@@ -48,6 +50,7 @@ public class ARMInstruction {
 
    /* Register map and counts */
    private HashMap<String, String> reg_map;
+   private HashMap<String, String> bb_map;
    private Counter reg_count;
    private Boolean[] regs_avail;
 
@@ -61,13 +64,14 @@ public class ARMInstruction {
   /*************************
    * CONSTRUCTOR
    ************************/ 
-   public ARMInstruction (Instruction insn, HashMap<String, String> reg_map, Counter reg_count, Boolean[] regs_avail) {
+   public ARMInstruction (Instruction insn, HashMap<String, String> reg_map, Counter reg_count, HashMap<String, String> bb_map) {
       this.insn = insn.getInsn();
+      this.curr_insn = insn.getInstance();
       this.insn_type = insn.getType();
-      this.regs_avail = regs_avail;
-
+     
       this.reg_map = reg_map;
       this.reg_count = reg_count;
+      this.bb_map = bb_map;
 
       this.insn_destination=(Instruction)(insn.getAttributes()).get(DST_LOC);
       //this.arm_destination = rtl2arm (this.insn_destination);
@@ -167,7 +171,8 @@ public class ARMInstruction {
             src_res = rtl2arm(src); //jump destination (label xx)
             //signature = evalSet(type, dst_res, src_res);
             //System.out.println("RAWR " + signature);
-            out.append("b" + dst_res + " .L" + src_res); // IF_THEN_ELSE
+            out.append("b" + dst_res + " BB_" + bb_map.get(src_res)); // IF_THEN_ELSE
+            out.append("\n\tb BB_"); //the 2nd branch to bb when condition fails
             break;
             //out.append()
           case LE: 
@@ -204,8 +209,12 @@ public class ARMInstruction {
       if (signature == SET_SIGNATURE.SET_MEM_REG) {
 
          System.out.println("Added to map! key dst: " + dst + " key src: " + src);
-         reg_map.put(dst, src);
-         reg_count.increment();
+         if(!reg_map.containsKey(dst)) {
+            reg_map.put(dst, src);
+         }
+         arm_out.append("\n\tldr r2, " + src + "\n");
+         arm_out.append("\tstr r2, " + reg_map.get(dst) + "\n\n");
+         //reg_count.increment();
 
       } else if (signature == SET_SIGNATURE.SET_REG_CONST) { 
 
@@ -235,33 +244,37 @@ public class ARMInstruction {
       } else if (signature == SET_SIGNATURE.PLUS_REG_CONST) {
 
           //arm_out.append("[" + dst + ", " + src + "]");
-         arm_out.append(dst + ", " + src);
+         //arm_out.append(dst + ", " + src);
+         arm_out.append("\tldr r2, " + dst + "\n");
+         arm_out.append("\tadd r2, r2, " + src + "\n");
 
       } else if (signature == SET_SIGNATURE.PLUS_REG_F_CONST) {
 
-         //arm_out.append("[" + dst + ", " + src + "]");
-         arm_out.append(dst + ", " + src);
+          //arm_out.append("[" + dst + ", " + src + "]");
+          arm_out.append(dst + ", " + src);
 
-      } else if (signature == SET_SIGNATURE.SET_REG_PLUS) {
-
-         arm_out.append("\tadd r2, r2, " + src.substring(12) + "\n"); 
-         arm_out.append("\tstr r2, " + dst + "\n"); 
+      } else if (signature == SET_SIGNATURE.SET_REG_PLUS_CONST) {
+          arm_out.append(src);
+         //arm_out.append("\tadd r2, r2, " + src.substring(12) + "\n"); 
+          arm_out.append("\tstr r2, " + dst + "\n"); 
     
       } else if (signature == SET_SIGNATURE.COMPARE_CONST) {
           //arm_out.append("dst: " + dst + "\n");
           //arm_out.append("src: " + src + "\n");
+          arm_out.append("\tldr r2, " + src.substring(8,18) + "\n");
           arm_out.append("\tcmp r2, " + src.substring(20) + "\n"); //HACKKKKKKK
+          
           //String[] compare_ops = src.substring(8).split(", ");
           //arm_out.append("RAWRAWRAWRAWRAWR " + compare_ops[0] + " sfafa " + compare_ops[1]);
       } else if (signature == SET_SIGNATURE.SET_ADD_REG_REG) {
           arm_out.append("\tadd r2, " + src + "\n");
           arm_out.append("\tstr r0, " + dst + "\n");
       } else if (signature == SET_SIGNATURE.SET_PC_LABEL) {
-          arm_out.append("\tb .L" +  src + "\n");
+          arm_out.append("\tb BB_" +  bb_map.get(src) + "\n"); //jumping to label
       } else if (signature == SET_SIGNATURE.SET_B_CONDITIONAL) {
           //"if then else???"
       } else if (signature == SET_SIGNATURE.SET_COND_JUMP) {
-          arm_out.append("\t" + src + "\n");
+          arm_out.append("\t" + src + bb_map.get(curr_insn.getNextID()) + "\n");
       } else if (signature == SET_SIGNATURE.SET_ADD_STR) {
           arm_out.append(src);
           arm_out.append("\tadd r0, r1, r2\n");
@@ -309,9 +322,10 @@ public class ARMInstruction {
       String regex_pc = "PC";
       String regex_label_rf = "[0-9]+";
       String regex_jump_cond = "le"; // maybe later ge, gt, lt
-      String regex_if_then_else = "ble .L[0-9]+";
+      String regex_if_then_else = "ble BB_[0-9]+\n\tb BB_";
       String regex_set_plus = "\tldr r1, \\[.*\\]\n\tldr r2, \\[.*\\]\n"; 
       String regex_reg_return = "reg [0-9]";
+      String regex_set_plus_const = "\tldr r2, \\[.*\\]\n\tadd r2, r2, #.*\n";
 
       if (type == InstructionType.SET) {
 
@@ -331,9 +345,9 @@ public class ARMInstruction {
 
             return SET_SIGNATURE.SET_REG_PLUS; 
  
-         } else if (dst.matches(regex_register)&&src.matches(regex_plus_reg_const)){
+         } else if (dst.matches(regex_register)&&src.matches(regex_set_plus_const)){
 
-            return SET_SIGNATURE.SET_REG_PLUS;
+            return SET_SIGNATURE.SET_REG_PLUS_CONST;
 
          } else if(dst.matches(regex_cc) && src.matches(regex_cond_compare)) {
             

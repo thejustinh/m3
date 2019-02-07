@@ -40,6 +40,15 @@ public class Instruction {
       Instruction insn = (Instruction) this.attributes.get(OPR_LOC);
       return insn;
    }
+   public Instruction getInstance() { return this;}
+/****************************
+ * SETTER METHODS
+ ***************************/
+
+   public void setBasicBlock (int basic_block_num) { this.basic_block_num = basic_block_num; }
+   public void setCurrID(int curr_id) { this.curr_id = curr_id; }
+   public void setNextID(int next_id) { this.next_id = next_id; }
+   public void setPrevID(int prev_id) { this.prev_id = prev_id; }
 
 /****************************
  * INSTRUCTION LOGIC METHODS
@@ -193,10 +202,33 @@ public class Instruction {
          prev_id = Integer.parseInt(((String)attributes.get(2))); 
          next_id = Integer.parseInt(((String)attributes.get(3))); 
          basic_block_num = Integer.parseInt(((String)attributes.get(4)));
+         for(int i = 0; i < attributes.size(); i++) {
+            Object temp = attributes.get(i);
+            if(temp instanceof Instruction) {
+               setRestBasicBlock((Instruction)temp, curr_id, prev_id, next_id, basic_block_num);
+            }
+         } 
       } catch (Exception e) {
          basic_block_num = -1;
       }
 
+   }
+
+   private void setRestBasicBlock(Instruction temp, int curr_id, int prev_id, int next_id, int basic_block_num) {
+   
+      
+      temp.setBasicBlock(basic_block_num);
+      temp.setNextID(next_id);
+      temp.setCurrID(curr_id);
+      temp.setPrevID(prev_id);
+      
+      for(int i = 0; i < temp.getAttributes().size(); i++) {
+            Object elem = temp.getAttributes().get(i);
+            if(elem instanceof Instruction) {
+               Instruction instruction = (Instruction)elem;
+               setRestBasicBlock(instruction, curr_id, prev_id, next_id, basic_block_num);
+            } 
+         } 
    }
 
    public void print_type_and_bb() {
@@ -261,7 +293,13 @@ public class Instruction {
          }
          
          return;
+      }
+      /* 
+      else if (insn_type == InstructionType.REG_F_SI) {
+         counter.increment();
+         return;
       } 
+      */
       for(int i = 0; i < attributes.size(); i++) {
          Object temp = attributes.get(i);
          if(temp instanceof Instruction) {
@@ -311,11 +349,20 @@ public class Instruction {
       in.setBasicBlock();
       in.findRegisters(reg_map, virtual_reg_count);
       //in.print_type_and_bb();
-      //Instruction temp = in.getCallFunc();
+      Instruction temp = (Instruction)in.getAttributes().get(5);
+      Instruction temp_2 = (Instruction)temp.getAttributes().get(2);
       System.out.print("{");
-      in.printAll();
+      temp.printAll();
       System.out.print("}");
-
+      System.out.println();
+      System.out.println(in.getCurrID());
+      System.out.println(in.getNextID());
+      System.out.println(in.getPrevID());
+      System.out.println(in.getBasicBlock());
+      System.out.println(temp.getCurrID());
+      System.out.println(temp.getNextID());
+      System.out.println(temp.getPrevID());
+      System.out.println(temp.getBasicBlock());
       //System.out.print(rawr[2]);
       //helper(rawr);
       //System.out.print(rawr[2]);

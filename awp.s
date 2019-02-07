@@ -1,14 +1,23 @@
-	.arch armv7-a
+	.arch armv6
 	.text
 	.global main
 main:
 	push {fp, lr}
 	mov fp, sp
 	sub sp, sp, #52
+BB_2:
 	mov r2, #10
 	str r2, [fp, #-4]
+
+	ldr r2, [fp, #-4]
+	str r2, [fp, #-4]
+
 	mov r2, #200
 	str r2, [fp, #-8]
+
+	ldr r2, [fp, #-8]
+	str r2, [fp, #-8]
+
 	ldr r2, [fp, #-4]
 	str r2, [fp, #-12]
 	ldr r2, [fp, #-8]

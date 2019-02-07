@@ -1,5 +1,13 @@
 CSC 431
-Justin Herrera
-James Kwan
+Justin Herrera - jherre34
+James Kwan - jkwan02
 
-MASTER
+for fib:
+compile: ./fib_gen.sh
+execute: ./demoFib
+
+for addwithprint:
+compile: ./generate.sh
+execute: ./demoAwp.sh
+
+Makefile doesn't work on machine.
