@@ -9,5 +9,3 @@ execute: ./demoFib
 for addwithprint:
 compile: ./generate.sh OR make
 execute: ./demoAwp.sh
-
-Makefile doesn't work on machine.

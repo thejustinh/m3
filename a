@@ -1,0 +1,162 @@
+REMOVING OLD CLASS FILES
+COMPILING ALL JAVA FILES
+$RUNNING GenerateAssembly PROGRAM
+-----
+ID: 0 BB: -1 table?: -1
+ID: 1 BB: -1 table?: -1
+ID: 3 BB: 2 table?: 2
+ID: 2 BB: 2 table?: 2
+REG_NUM: 113 Location: [fp, #-4]
+ID: 5 BB: 2 table?: 2
+ID: 6 BB: 2 table?: 2
+REG_NUM: 114 Location: [fp, #-8]
+ID: 7 BB: 2 table?: 2
+ID: 8 BB: 2 table?: 2
+REG_NUM: 115 Location: [fp, #-12]
+ID: 9 BB: 2 table?: 2
+REG_NUM: 116 Location: [fp, #-16]
+ID: 10 BB: 2 table?: 2
+REG_NUM: 110 Location: [fp, #-20]
+ID: 11 BB: 2 table?: 2
+REG_NUM: 0 Location: [fp, #-24]
+ID: 12 BB: 2 table?: 2
+REG_NUM: 14 Location: [fp, #-28]
+REG_NUM: 12 Location: [fp, #-32]
+ID: 13 BB: 2 table?: 2
+REG_NUM: 117 Location: [fp, #-36]
+ID: 14 BB: 2 table?: 2
+REG_NUM: 118 Location: [fp, #-40]
+ID: 15 BB: 2 table?: 2
+REG_NUM: 111 Location: [fp, #-44]
+ID: 16 BB: 2 table?: 2
+REG_NUM: 112 Location: [fp, #-48]
+ID: 19 BB: 2 table?: 2
+ID: 23 BB: 2 table?: 2
+ID: 24 BB: 2 table?: 2
+BB: 2
+3 NOTE
+
+2 NOTE
+
+TYPE OF S_EXP: SET
+5 INSN
+	DST: null
+	SRC: null
+	mov r2, #10
+	str r2, [fp, #-4]
+
+
+TYPE OF S_EXP: SET
+Added to map! key dst: mem[105, #-4] key src: [fp, #-4]
+6 INSN
+	DST: null
+	SRC: null
+
+	ldr r2, [fp, #-4]
+	str r2, [fp, #-4]
+
+
+
+TYPE OF S_EXP: SET
+7 INSN
+	DST: null
+	SRC: null
+	mov r2, #200
+	str r2, [fp, #-8]
+
+
+TYPE OF S_EXP: SET
+Added to map! key dst: mem[105, #-8] key src: [fp, #-8]
+8 INSN
+	DST: null
+	SRC: null
+
+	ldr r2, [fp, #-8]
+	str r2, [fp, #-8]
+
+
+
+TYPE OF S_EXP: SET
+9 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-4]
+	str r2, [fp, #-12]
+
+
+TYPE OF S_EXP: SET
+10 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-8]
+	str r2, [fp, #-16]
+
+
+TYPE OF S_EXP: SET
+11 INSN
+	DST: null
+	SRC: null
+	ldr r1, [fp, #-16]
+	ldr r2, [fp, #-12]
+	add r0, r1, r2
+	str r0, [fp, #-20]
+
+
+TYPE OF S_EXP: SET
+12 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-20]
+	str r2, [fp, #-24]
+
+
+point 1
+point 1
+point 1
+point 1
+point 1
+13
+TYPE OF S_EXP: SET
+14 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-4]
+	str r2, [fp, #-36]
+
+
+TYPE OF S_EXP: SET
+15 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-8]
+	str r2, [fp, #-40]
+
+
+TYPE OF S_EXP: SET
+16 INSN
+	DST: null
+	SRC: null
+	ldr r1, [fp, #-40]
+	ldr r2, [fp, #-36]
+	add r0, r1, r2
+	str r0, [fp, #-44]
+
+
+TYPE OF S_EXP: SET
+19 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-44]
+	str r2, [fp, #-48]
+
+
+TYPE OF S_EXP: SET
+23 INSN
+	DST: null
+	SRC: null
+	ldr r2, [fp, #-48]
+	mov r0, r2
+
+
+$-----
+FINISHED
