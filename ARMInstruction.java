@@ -132,7 +132,7 @@ public class ARMInstruction {
             //out.append(getRegister(insn, false));
             out.append("CC " + (String)insn.getAttributes().get(DST_LOC));
             break;
-         case MEM_C_SI: // NON-TERMINAL
+         case MEM_C_SI: 
             dst = (Instruction) insn.getAttributes().get(DST_LOC); 
             dst_res = rtl2arm(dst); 
             out.append("mem[" + dst_res + "]");

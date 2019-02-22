@@ -1,0 +1,16 @@
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+public class BasicBlockGraph {
+
+    private ArrayList<BasicBlock> bb_graph;
+
+    public BasicBlockGraph (ArrayList<LinkedList<Instruction>> graph,
+                            ) {
+        for (LinkedList<Instruction> block : graph) {
+            BasicBlock new_block = new BasicBlock(block, block.getBasicBlock(), );
+            this.
+        }
+    }
+
+}
